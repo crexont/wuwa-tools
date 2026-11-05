@@ -588,7 +588,7 @@ async function drawCard() {
   g.fillStyle = css.dim;
   g.font = `500 11px ${FONT}`;
   g.textAlign = 'right';
-  g.fillText('명조 툴즈 · 파티 메이커  crexont.github.io/wuwa-echo-helper', W - PAD, H - PAD + 6);
+  g.fillText('명조 툴즈 · 파티 메이커  crexont.github.io/wuwa-tools', W - PAD, H - PAD + 6);
   g.textAlign = 'left';
   return canvas;
 }

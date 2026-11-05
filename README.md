@@ -8,11 +8,11 @@
 목표 스펙까지의 **완성 확률**과 **튜너 손익**으로 계속 강화할지(**GO / STOP**) 알려줍니다.<br>
 **파티 메이커** — 가진 캐릭터로 파티를 짜고, 한 장짜리 카드로 캡처합니다.
 
-[![사이트 바로가기](https://img.shields.io/badge/%EC%82%AC%EC%9D%B4%ED%8A%B8-%EB%B0%94%EB%A1%9C%EA%B0%80%EA%B8%B0-3ee6d6?style=for-the-badge)](https://crexont.github.io/wuwa-echo-helper/)
+[![사이트 바로가기](https://img.shields.io/badge/%EC%82%AC%EC%9D%B4%ED%8A%B8-%EB%B0%94%EB%A1%9C%EA%B0%80%EA%B8%B0-3ee6d6?style=for-the-badge)](https://crexont.github.io/wuwa-tools/)
 &nbsp;
 ![version](https://img.shields.io/badge/version-v5.0-222327?style=for-the-badge)
 
-<img src="docs/screenshot-main-v5.0.png" alt="명조 툴즈 · 에코파고 화면" width="860">
+<img src="images/screenshot-main-v5.0.png" alt="명조 툴즈 · 에코파고 화면" width="860">
 
 </div>
 
@@ -33,7 +33,7 @@
 
 ### 사용법
 
-1. [사이트](https://crexont.github.io/wuwa-echo-helper/)에 들어가서 **화면 공유 시작**을 누르고 명조 창을 선택해요.
+1. [사이트](https://crexont.github.io/wuwa-tools/)에 들어가서 **화면 공유 시작**을 누르고 명조 창을 선택해요.
    (게임은 **전체 창 모드**를 권장해요.)
 2. **공명자 선택**에서 키우는 캐릭터를 고르면 유효옵이 자동으로 체크돼요. 필요하면 **유효옵 선택**에서 직접 고쳐도 돼요.
    **GO 판단 기준**은 튜너 아끼기(기본)와 에코 아끼기 중에 골라요.
@@ -43,13 +43,13 @@
 6. 게임 위에 띄워 두고 싶으면 **⧉ 오버레이**를 눌러요. (크롬·엣지 PC)
 
 <div align="center">
-  <img src="docs/screenshot-overlay-v5.0.png" alt="오버레이 창" width="320"><br>
+  <img src="images/screenshot-overlay-v5.0.png" alt="오버레이 창" width="320"><br>
   <sub>오버레이 창: 게임 위에 띄워 두고 부옵션과 확률을 바로 확인</sub>
 </div>
 
 ## 파티 메이커 (v5.0)
 
-사이트 제목 줄의 **파티 메이커** 탭 (또는 [바로가기](https://crexont.github.io/wuwa-echo-helper/#party)).
+사이트 제목 줄의 **파티 메이커** 탭 (또는 [바로가기](https://crexont.github.io/wuwa-tools/#party)).
 
 - **보유 캐릭터 체크**: 가진 캐릭터를 켜 두면, 평소에는 가진 캐릭터만 속성별로 보여줘요.
 - **캐릭터별 설정**: 얼굴을 누르면 돌파(0돌부터 6돌), 무기 재련(R1부터 R5), 무기(그 캐릭터 무기 종류만, 3성 이상), 파티 사용 횟수(1회 / 2회)를 정해요. 서포터처럼 두 파티에 같이 넣는 캐릭터는 2회로.
@@ -58,7 +58,7 @@
 - 설정은 전부 이 브라우저에만 저장돼요.
 
 <div align="center">
-  <img src="docs/screenshot-party-v5.0.png" alt="파티 메이커 캡처 카드" width="720"><br>
+  <img src="images/screenshot-party-v5.0.png" alt="파티 메이커 캡처 카드" width="720"><br>
   <sub>파티 메이커 캡처 카드: 10파티 + 안 넣은 캐릭터를 한 장으로</sub>
 </div>
 
