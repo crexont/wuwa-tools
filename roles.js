@@ -171,7 +171,10 @@ function themeVars(hex) {
   const red = !gray && l0 < 0.55 && (h < 18 || h > 340);   // 진한 빨강은 밝게 올리면 살구색이 되므로 진하게 둔다
   const accent = hslToRgb(h, red ? Math.max(s, 0.8) : Math.min(s, 0.95), gray ? 0.8 : red ? 0.58 : 0.72);
   const panel = hslToRgb(h, 0.15 * t, 0.08);
+  // STOP(붉은 주황)이 강조색이랑 비슷한 빨강 · 주황 테마에서는 STOP을 회색으로
+  const stop = !gray && (h < 40 || h > 320) ? { '--amber': '#a9a59c', '--amber-soft': 'rgba(169, 165, 156, 0.12)' } : {};
   return {
+    ...stop,
     '--bg': c(0.16 * t, 0.05), '--panel': `rgb(${panel.join(', ')})`, '--panel-rgb': panel.join(', '),
     '--surface': c(0.13 * t, 0.11), '--raised': c(0.12 * t, 0.15), '--line': c(0.15 * t, 0.2),
     '--text': c(0.35 * t, 0.94), '--muted': c(0.12 * t, 0.7), '--dim': c(0.09 * t, 0.46),
@@ -182,7 +185,7 @@ function themeVars(hex) {
 function setTheme(role) {
   const root = document.documentElement;
   for (const k of ['--bg', '--panel', '--panel-rgb', '--surface', '--raised', '--line', '--text', '--muted', '--dim',
-    '--cyan', '--cyan-rgb', '--cyan-light', '--cyan-ink', '--art-full']) root.style.removeProperty(k);
+    '--cyan', '--cyan-rgb', '--cyan-light', '--cyan-ink', '--amber', '--amber-soft', '--art-full']) root.style.removeProperty(k);
   const color = role && THEME_COLORS[role.id];
   if (color) {
     root.dataset.themed = '';
