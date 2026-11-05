@@ -20,14 +20,14 @@
   <header class="app-header">
     <h2 class="app-title">
       <span class="logo" aria-hidden="true"><span class="wave"><i></i><i></i><i></i><i></i><i></i></span></span>
-      명조 툴즈
-      <span class="badge-release">v5.0</span>
+      <span class="brand-name">명조 툴즈<small>WUWA TOOLS</small></span>
     </h2>
     <nav class="app-tabs" id="appTabs" aria-label="메뉴">
-      <a href="#" data-tab="echo">에코파고</a>
-      <a href="#party" data-tab="party">파티 메이커</a>
+      <a href="#" data-tab="echo"><b>에코파고</b><small>ECHO TUNING</small></a>
+      <a href="#party" data-tab="party"><b>파티 메이커</b><small>TEAM BUILDER</small></a>
     </nav>
     <span class="app-sub" id="appSub">에코 부옵션 강화 시뮬레이터</span>
+    <span class="badge-release">v5.0</span>
   </header>
 
   <div class="layout-container">
@@ -45,7 +45,7 @@
 
       <div class="role-section" id="roleSection">
         <div class="filter-header">
-          <div class="filter-label">공명자 선택</div>
+          <div class="filter-label">공명자<span class="en">RESONATOR</span></div>
           <span class="role-note" id="roleNote"></span>
         </div>
         <div class="role-strip" id="roleStrip"></div>
@@ -54,7 +54,7 @@
 
       <div class="filter-section">
         <div class="filter-header">
-          <div class="filter-label">유효옵 선택</div>
+          <div class="filter-label">유효옵<span class="en">TARGET STATS</span></div>
           <select id="minTierCut" class="cutoff-select" title="수치 컷오프">
             <option value="low" selected>하옵 이상 유효 (기본)</option>
             <option value="mid">중옵 이상만 유효</option>
@@ -73,7 +73,7 @@
 
       <!-- 화면 공유를 지원하지 않는 기기(모바일 등)에서만 보임 -->
       <div class="manual-notice" id="manualNotice" hidden>
-        <strong>📱 이 기기에서는 화면 공유를 쓸 수 없어요</strong>
+        <strong>이 기기에서는 화면 공유를 쓸 수 없어요</strong>
         <p>모바일 브라우저는 화면 공유를 지원하지 않아요. 대신 아래 빈칸의 <b>[+ 직접 추가]</b>를 눌러 강화로 열린 옵션을 하나씩 입력하면, 똑같이 완성 확률과 GO / STOP을 계산해 드려요.</p>
       </div>
 
@@ -96,11 +96,13 @@
 
       <div class="stat-list-container">
         <div class="stat-list-header">
-          <div class="stat-list-title">현재 인식된 부옵션 <span class="stat-count" id="stableBufferText">0/5</span></div>
-          <div class="stat-list-hint">클릭해서 수정하면 📌 고정돼요</div>
+          <div class="stat-list-title">인식된 부옵션<span class="en">SUB-STATS</span><span class="stat-count" id="stableBufferText">0/5</span></div>
         </div>
-        <div id="statList">
-          <div class="stat-empty">에코 데이터가 없습니다. 화면을 공유해주세요.</div>
+        <div class="echo-box">
+          <div class="echo-top"><span class="echo-stars" aria-hidden="true">★★★★★</span><span class="echo-lv" id="echoLevel">+0</span><span class="stat-list-hint">칸을 누르면 직접 고칠 수 있어요 (고친 칸은 고정)</span></div>
+          <div id="statList">
+            <div class="stat-empty">에코 데이터가 없습니다. 화면을 공유해주세요.</div>
+          </div>
         </div>
       </div>
       <video id="gameVideo" autoplay playsinline></video>
@@ -109,7 +111,7 @@
     <div class="side-col">
       <div class="panel dashboard-panel">
         <div class="dashboard-header">
-          <span>목표별 완성 확률</span>
+          <span>목표별 완성 확률<span class="en">PROBABILITY</span></span>
           <button id="overlayBtn" class="btn-overlay" type="button" hidden title="게임 위에 항상 떠 있는 작은 판정 창 (크롬·엣지)">⧉ 오버레이</button>
         </div>
         <div id="dashboardList"></div>

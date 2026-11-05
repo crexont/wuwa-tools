@@ -213,10 +213,10 @@ function renderStatList(slots, isValid, keyCount, openedCount) {
       if (valid) row.classList.add('is-valid');
       row.innerHTML = `
         <div class="stat-name">
-          ${statIcon(stat.key)}<span>${pinned[idx] ? '📌 ' : ''}${stat.name}</span>
+          ${statIcon(stat.key)}<span>${stat.name}</span>${pinned[idx] ? '<span class="pin-mark">고정</span>' : ''}
           <span class="stat-val">+${stat.val}${stat.isPercent ? '%' : ''}</span>
           ${valid ? '<span class="valid-mark">유효</span>' : ''}
-          ${keyCount[stat.key] > 1 ? '<span class="stat-warn">⚠ 중복</span>' : ''}
+          ${keyCount[stat.key] > 1 ? '<span class="stat-warn">중복</span>' : ''}
         </div>
         <div style="display:flex; align-items:center; gap:8px;">
           <span class="tier-badge ${stat.tier.class}">${stat.tier.label}</span>
@@ -226,11 +226,13 @@ function renderStatList(slots, isValid, keyCount, openedCount) {
     row.addEventListener('click', () => openEditModal(idx));
     statList.appendChild(row);
   });
-  // 아직 안 연 칸은 "빈칸"으로 보여준다. 바로 다음 칸만 직접 추가 가능 (옵션은 위에서부터 차례로 열리므로)
+  // 아직 안 연 칸은 게임처럼 "+N까지 강화 시 해금"으로 보여준다 (칸은 +5마다 하나씩 열림).
+  // 바로 다음 칸만 직접 추가 가능 (옵션은 위에서부터 차례로 열리므로)
+  $('echoLevel').textContent = `+${openedCount * 5}`;
   for (let idx = openedCount; idx < SLOT_COUNT; idx++) {
     const row = document.createElement('div');
     row.className = 'stat-item stat-item-blank';
-    row.innerHTML = `<div class="stat-name"><span class="blank-no">${idx + 1}</span><span class="blank-label">빈칸</span></div>`;
+    row.innerHTML = `<div class="stat-name"><span class="blank-lock"></span><span class="blank-label">+${(idx + 1) * 5}까지 강화 시 해금</span></div>`;
     if (idx === openedCount) {
       row.classList.add('stat-item-add');
       row.insertAdjacentHTML('beforeend', '<span class="stat-edit-hint">+ 직접 추가</span>');
