@@ -1,8 +1,8 @@
-// strategy.js — 명조 툴즈 v6.0: 강화 전략 계산 (유효옵 + 최소 수치 + 꼭 필요한 옵션 + N개 이상 → 성공 확률 · 최적 강화 순서)
+// strategy.js — 명조 툴즈 v6.0: 강화 전략 계산 (유효옵 + 최소 수치 + 고정 옵션 + N개 이상 → 성공 확률 · 최적 강화 순서)
 //
 // 모델: 부옵션은 13종 중에서 중복 없이 균등하게 5칸이 열린다 (에코파고 확률 계산과 같음).
-// 목표: "꼭" 옵션은 전부 최소 수치 이상으로 떠야 하고, 유효옵(꼭 포함)이 최소 수치 이상으로 N개 이상 뜨면 성공.
-//   꼭 옵션이 최소 수치 미만으로 뜨면 실패 확정. 꼭이 아닌 유효옵이 미만으로 뜨면 그냥 꽝 한 칸.
+// 목표: "고정" 옵션은 전부 최소 수치 이상으로 떠야 하고, 유효옵(고정 포함)이 최소 수치 이상으로 N개 이상 뜨면 성공.
+//   고정 옵션이 최소 수치 미만으로 뜨면 실패 확정. 고정이 아닌 유효옵이 미만으로 뜨면 그냥 꽝 한 칸.
 // 성공한 에코도 결국 +25까지 다 열어야 쓰니까, 성공 비용은 5칸 전부. 버린 에코는 재료로 써서 환급을 받는다.
 import { STAT_DATABASE } from './data.js';
 import { ECHO_COST } from './math.js';
@@ -26,9 +26,9 @@ export function passProb(key, minStep) {
 }
 
 /**
- * 목표 모델. 같은 종류(꼭 여부 · 기준 이상 확률)의 옵션은 서로 바꿔도 결과가 같으니 묶어서 센다.
+ * 목표 모델. 같은 종류(고정 여부 · 기준 이상 확률)의 옵션은 서로 바꿔도 결과가 같으니 묶어서 센다.
  * 상태 = { k: 연 칸 수, u: 묶음별 아직 안 뜬 개수, P: 기준 이상으로 뜬 유효옵 수 }
- * @param targets [{ key, minStep, req }]  유효옵 (req = 꼭 필요)
+ * @param targets [{ key, minStep, req }]  유효옵 (req = 고정)
  * @param need 유효옵 몇 개 이상이면 성공인지
  */
 export function makeModel(targets, need) {
@@ -62,7 +62,7 @@ export function makeModel(targets, need) {
       const n = s.u[i]; if (!n) return;
       const u = s.u.slice(); u[i]--;
       if (g.q > 0) out.push({ p: (n * g.q) / left, s: { k: s.k + 1, u, P: s.P + 1 } });
-      if (g.q < 1) out.push({ p: (n * (1 - g.q)) / left, s: g.req ? null : { k: s.k + 1, u, P: s.P } });   // 꼭 옵션이 기준 미만이면 실패
+      if (g.q < 1) out.push({ p: (n * (1 - g.q)) / left, s: g.req ? null : { k: s.k + 1, u, P: s.P } });   // 고정 옵션이 기준 미만이면 실패
     });
     return out;
   }
@@ -158,7 +158,7 @@ export function analyze(targets, need, metric) {
   return { model, best, untilDead: evaluate(model, () => true), openAll: evaluateOpenAll(model), rules: rulesOf(model, opt) };
 }
 
-// 사람이 읽을 전략표: rows[k][P] = null(나올 수 없음) | { kind: 'go' | 'stop' | 'mixed', byReq: Map(꼭 뜬 수 → 'go'|'stop'|'mixed') }
+// 사람이 읽을 전략표: rows[k][P] = null(나올 수 없음) | { kind: 'go' | 'stop' | 'mixed', byReq: Map(고정 뜬 수 → 'go'|'stop'|'mixed') }
 //   k = 연 칸 수(0~4), P = 기준 이상으로 뜬 유효옵 수(0 ~ N-1)
 export function rulesOf(model, opt) {
   const rows = Array.from({ length: SLOTS }, () => Array(model.N).fill(null));

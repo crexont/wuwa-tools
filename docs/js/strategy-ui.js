@@ -1,4 +1,4 @@
-// strategy-ui.js — 명조 툴즈 v6.0: 강화 전략 탭 화면 (유효옵 · 꼭 필요한 옵션 · N개 이상 → 확률 · 가장 싼 강화 순서 · 그래프)
+// strategy-ui.js — 명조 툴즈 v6.0: 강화 전략 탭 화면 (유효옵 · 고정 옵션 · N개 이상 → 확률 · 가장 싼 강화 순서 · 그래프)
 import { STAT_DATABASE, evaluateStepTier } from './data.js';
 import { analyze, passProb, METRICS } from './strategy.js';
 
@@ -6,7 +6,7 @@ const $ = (id) => document.getElementById(id);
 const KEY = 'echopago.strategy.v1';
 const SLOTS = 5;
 const KEYS = Object.keys(STAT_DATABASE);
-// 처음 열었을 때 기본 목표: 크크 꼭 + 공효 · 공% 중 1
+// 처음 열었을 때 기본 목표: 크크 고정 + 공효 · 공% 중 1
 const DEFAULT_GOAL = { keys: ['크확', '크피', '공효', '공%'], req: ['크확', '크피'], need: 3 };
 const METRIC_HINT = {
   tuner: '튜너가 가장 적게 드는 순서. 에코파고의 "튜너 아끼기"와 같은 기준이에요.',
@@ -21,7 +21,7 @@ const nameOf = (t) => STAT_DATABASE[t.key].name + (t.minStep > 1 ? ` ${valText(t
 function load() {
   let s = null;
   try { s = JSON.parse(localStorage.getItem(KEY)); } catch { /* 무시 */ }
-  const oldFormat = s && !('need' in s);                     // 예전 저장(전부 꼭)은 그대로 살린다
+  const oldFormat = s && !('need' in s);                     // 예전 저장(전부 고정)은 그대로 살린다
   const targets = (Array.isArray(s?.targets) ? s.targets : [])
     .filter((t) => STAT_DATABASE[t?.key])
     .map((t) => ({ key: t.key, minStep: Math.min(Math.max(1, t.minStep | 0), STAT_DATABASE[t.key].values.length), req: oldFormat ? true : !!t.req }))
@@ -34,7 +34,7 @@ function load() {
 function presetState(p) {
   return { targets: p.keys.map((key) => ({ key, minStep: 1, req: p.req.includes(key) })), need: p.need };
 }
-// 꼭 옵션은 5개까지, 몇 개 이상은 [꼭 개수(최소 1) ~ min(5, 유효 개수)]
+// 고정 옵션은 5개까지, 몇 개 이상은 [고정 개수(최소 1) ~ min(5, 유효 개수)]
 function clampNeed(st) {
   let req = st.targets.filter((t) => t.req);
   while (req.length > SLOTS) { req.at(-1).req = false; req = st.targets.filter((t) => t.req); }
@@ -55,11 +55,11 @@ function fmtCost(metric, n) {
 const fmtPct = (p) => { const v = p * 100; return v >= 10 ? v.toFixed(1) : v >= 1 ? v.toFixed(2) : v.toFixed(3); };
 const perSuccess = (r, m) => r[m].net / r.p;
 
-// 목표를 한 줄 문장으로: "크리티컬 확률 · 크리티컬 피해 꼭 + 나머지 2개(공명 효율 · 공격력%) 중 1개"
+// 목표를 한 줄 문장으로: "크리티컬 확률 · 크리티컬 피해 고정 + 나머지 2개(공명 효율 · 공격력%) 중 1개"
 function goalText() {
   const req = state.targets.filter((t) => t.req), rest = state.targets.filter((t) => !t.req);
   const more = state.need - req.length;
-  const reqPart = req.length ? `${req.map(nameOf).join(' · ')} 꼭` : '';
+  const reqPart = req.length ? `${req.map(nameOf).join(' · ')} 고정` : '';
   if (more <= 0) return req.length === state.targets.length ? `${reqPart} (전부)` : reqPart;
   const restPart = `${req.length ? '나머지 ' : ''}${rest.length}개(${rest.map(nameOf).join(' · ')}) 중 ${more}개${more === rest.length ? ' (전부)' : ' 이상'}`;
   return req.length ? `${reqPart} + ${restPart}` : restPart;
@@ -76,7 +76,7 @@ function renderTargets() {
   const box = $('sgTargets');
   if (!state.targets.length) { box.innerHTML = '<p class="sg-empty">위에서 유효옵을 골라 주세요.</p>'; $('sgNeedRow').hidden = true; return; }
   const reqCount = state.targets.filter((t) => t.req).length;
-  box.innerHTML = `<div class="sg-target sg-target-head"><span>유효옵</span><span>최소 수치</span><span title="꼭 떠야 하는 옵션">꼭</span><span></span></div>` + state.targets.map((t, i) => {
+  box.innerHTML = `<div class="sg-target sg-target-head"><span>유효옵</span><span>최소 수치</span><span title="반드시 떠야 하는 옵션">고정</span><span></span></div>` + state.targets.map((t, i) => {
     const d = STAT_DATABASE[t.key];
     const opts = d.values.map((v, s) => {
       const tier = evaluateStepTier(s + 1, d.values.length).label;
@@ -85,7 +85,7 @@ function renderTargets() {
     return `<div class="sg-target ${t.req ? 'is-req' : ''}">
       <span class="sg-target-name">${statIcon(t.key)}${d.name}</span>
       <select class="cutoff-select" data-min="${i}" aria-label="${d.name} 최소 수치">${opts}</select>
-      <button type="button" class="sg-req" data-req="${i}" aria-pressed="${t.req}" ${!t.req && reqCount >= SLOTS ? 'disabled' : ''} title="꼭 떠야 하는 옵션">꼭</button>
+      <button type="button" class="sg-req" data-req="${i}" aria-pressed="${t.req}" ${!t.req && reqCount >= SLOTS ? 'disabled' : ''} title="반드시 떠야 하는 옵션">고정</button>
       <button type="button" class="sg-x" data-remove="${i}" aria-label="${d.name} 빼기">✕</button>
     </div>`;
   }).join('');
@@ -125,12 +125,12 @@ function renderResult() {
     <p class="sg-note">평균값이에요. 버린 에코는 재료로 써서 튜너 30% · 경험치 75%를 돌려받는 걸로 계산했어요. 성공한 에코는 +25까지 다 연 비용이에요.</p>
     <h4 class="sg-h">가장 싼 강화 순서<span class="en">STRATEGY</span></h4>
     ${rulesTable(res)}
-    <p class="sg-note">유효옵은 최소 수치 이상으로 뜬 것만 세요. ${res.model.reqSize ? '꼭 옵션이 최소 수치보다 낮게 뜨면 그 에코는 바로 버려요. (같은 옵션은 다시 안 뜨니까) ' : ''}꼭이 아닌 유효옵이 낮게 뜨면 꽝 한 칸으로 쳐요.</p>`;
+    <p class="sg-note">유효옵은 최소 수치 이상으로 뜬 것만 세요. ${res.model.reqSize ? '고정 옵션이 최소 수치보다 낮게 뜨면 그 에코는 바로 버려요. (같은 옵션은 다시 안 뜨니까) ' : ''}고정이 아닌 유효옵이 낮게 뜨면 꽝 한 칸으로 쳐요.</p>`;
   renderCompare(res);
   drawChart();
 }
 
-// 순서표: 행 = 연 칸 수, 열 = 기준 이상으로 뜬 유효옵 수. 꼭 옵션이 몇 개냐에 따라 갈리면 그걸 적는다
+// 순서표: 행 = 연 칸 수, 열 = 기준 이상으로 뜬 유효옵 수. 고정 옵션이 몇 개냐에 따라 갈리면 그걸 적는다
 function rulesTable(res) {
   const N = res.model.N, hasReq = res.model.reqSize > 0;
   const word = { go: '계속', stop: '버림', mixed: '옵션 따라' };
@@ -141,13 +141,13 @@ function rulesTable(res) {
       if (!cell) return '<td class="sg-na">-</td>';
       if (cell.kind !== 'mixed') return `<td class="sg-${cell.kind}">${word[cell.kind]}</td>`;
       const sorted = [...cell.byReq].sort((a, b) => a[0] - b[0]);
-      // 꼭 x개 이상이면 계속, 미만이면 버림 → 한 줄로
+      // 고정 x개 이상이면 계속, 미만이면 버림 → 한 줄로
       const cut = sorted.findIndex(([, kd]) => kd === 'go');
       const simple = cut > 0 && sorted.slice(0, cut).every(([, kd]) => kd === 'stop') && sorted.slice(cut).every(([, kd]) => kd === 'go');
       const detail = !hasReq || cell.byReq.size === 1 ? '어떤 옵션이 떴는지(수치 기준)에 따라 달라요'
-        : simple ? `꼭 옵션 ${sorted[cut][0]}개 이상이면 계속, 아니면 버림`
-        : sorted.reverse().map(([r, kd]) => `꼭 ${r}개: ${word[kd]}`).join(' · ');
-      return `<td class="sg-mixed" title="${detail}">${hasReq && cell.byReq.size > 1 ? '꼭 옵션 따라' : '옵션 따라'}<small>${detail}</small></td>`;
+        : simple ? `고정 옵션 ${sorted[cut][0]}개 이상이면 계속, 아니면 버림`
+        : sorted.reverse().map(([r, kd]) => `고정 ${r}개: ${word[kd]}`).join(' · ');
+      return `<td class="sg-mixed" title="${detail}">${hasReq && cell.byReq.size > 1 ? '고정 옵션 따라' : '옵션 따라'}<small>${detail}</small></td>`;
     }).join('');
     return `<tr><th>${label}</th>${tds}</tr>`;
   }).join('');
@@ -235,7 +235,7 @@ function niceMax(x) {
 function update() { clampNeed(state); save(); renderChips(); renderTargets(); renderMetric(); renderResult(); }
 
 // 공명자를 고르면(에코파고 · 강화 전략 어느 탭에서든) 그 공명자 추천 유효옵으로 목표를 채운다
-//   딜러(크확 · 크피 둘 다 유효) = 크크 꼭 + 유효 3개 이상(크크 + 1유효), 서포터 = 꼭 없이 2개 이상(서포터 2유효)
+//   딜러(크확 · 크피 둘 다 유효) = 크크 고정 + 유효 3개 이상(크크 + 1유효), 서포터 = 고정 없이 2개 이상(서포터 2유효)
 window.addEventListener('roleselect', (e) => {
   const role = e.detail;
   if (!role) { setRoleNote(''); return; }
@@ -243,7 +243,7 @@ window.addEventListener('roleselect', (e) => {
   state.targets = role.targets.filter((key) => STAT_DATABASE[key]).map((key) => ({ key, minStep: 1, req: dealer && (key === '크확' || key === '크피') }));
   state.need = dealer ? 3 : 2;
   update();
-  setRoleNote(`${role.name} 추천 유효옵으로 채웠어요 (${dealer ? '크크 꼭 + 1유효' : '서포터 2유효'}). 아래에서 더 고칠 수 있어요.`);
+  setRoleNote(`${role.name} 추천 유효옵으로 채웠어요 (${dealer ? '크크 고정 + 1유효' : '서포터 2유효'}). 아래에서 더 고칠 수 있어요.`);
 });
 function setRoleNote(text) { $('sgRoleNote').textContent = text || ''; }
 // 목표를 직접 고치면 안내 문구를 지운다
