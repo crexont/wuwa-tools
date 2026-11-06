@@ -640,7 +640,18 @@ body:not([data-tab="strategy"]) .sg-page { display: none; }
 /* 고른 옵션 줄: 이름 | 최소 수치 | 빼기 */
 .sg-targets { display: flex; flex-direction: column; border: 1px solid var(--line); background: rgba(0, 0, 0, 0.25); }
 .sg-targets:has(.sg-empty) { border: none; background: none; }
-.sg-target { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) auto; align-items: center; gap: 10px; padding: 8px 12px; border-bottom: 1px solid var(--line); }
+.sg-target { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) 40px 30px; align-items: center; gap: 10px; padding: 8px 12px; border-bottom: 1px solid var(--line); }
+.sg-target-head { padding-top: 6px; padding-bottom: 6px; color: var(--dim); font-size: 11px; }
+.sg-target-head span:nth-child(3) { text-align: center; }
+.sg-target.is-req { box-shadow: inset 2px 0 0 var(--cyan); }
+.sg-req { padding: 4px 0; border: 1px solid var(--line); background: transparent; color: var(--dim); font-size: 12px; font-weight: 700; cursor: pointer; }
+.sg-req:hover:not(:disabled) { color: var(--text); border-color: var(--dim); }
+.sg-req[aria-pressed="true"] { border-color: var(--cyan); background: var(--cyan); color: var(--cyan-ink); }
+.sg-req:disabled { opacity: 0.35; cursor: default; }
+.sg-presets { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.sg-need-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+.sg-need-row[hidden] { display: none; }
+.sg-goal-text { color: var(--text); font-size: 12.5px; }
 .sg-target:last-child { border-bottom: none; }
 .sg-target-name { display: flex; align-items: center; gap: 8px; min-width: 0; color: var(--text); font-size: 13.5px; font-weight: 600; white-space: nowrap; }
 .sg-target-name .stat-icon { color: var(--cyan); }
@@ -680,6 +691,7 @@ body:not([data-tab="strategy"]) .sg-page { display: none; }
 .sg-stop { color: var(--amber); font-weight: 600; }
 .sg-na { color: var(--dim); }
 .sg-mixed { color: var(--text); font-weight: 600; }
+.sg-rules td { min-width: 52px; }
 .sg-mixed small { display: block; margin-top: 2px; color: var(--muted); font-size: 10.5px; font-weight: 500; }
 
 /* 그래프 + 비교표 */
@@ -698,8 +710,9 @@ body:not([data-tab="strategy"]) .sg-page { display: none; }
 @media (max-width: 600px) {
   .sg-page { padding: 0 14px; }
   .sg-costs { grid-template-columns: 1fr; }
-  .sg-target { grid-template-columns: minmax(0, 1fr) auto; }
+  .sg-target { grid-template-columns: minmax(0, 1fr) 40px 30px; }
   .sg-target .cutoff-select { grid-column: 1 / -1; grid-row: 2; }
+  .sg-target-head span:nth-child(2) { display: none; }
   .sg-big-num { font-size: 36px; }
   .sg-cmp { font-size: 12px; }
   .sg-cmp th, .sg-cmp td { padding: 8px 5px; }
