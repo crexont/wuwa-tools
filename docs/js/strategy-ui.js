@@ -1,4 +1,4 @@
-// strategy-ui.js — 명조 툴즈 v5.0: 강화 전략 탭 화면 (유효옵 · 꼭 필요한 옵션 · N개 이상 → 확률 · 가장 싼 강화 순서 · 그래프)
+// strategy-ui.js — 명조 툴즈 v6.0: 강화 전략 탭 화면 (유효옵 · 꼭 필요한 옵션 · N개 이상 → 확률 · 가장 싼 강화 순서 · 그래프)
 import { STAT_DATABASE, evaluateStepTier } from './data.js';
 import { analyze, passProb, METRICS } from './strategy.js';
 
