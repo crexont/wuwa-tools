@@ -15,7 +15,7 @@
   <script>try { const v = localStorage.getItem('echopago.themeVars.v1'); if (v) { document.documentElement.style.cssText = v; document.documentElement.dataset.themed = ''; } } catch {}</script>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%278%27 fill=%27%23222327%27/%3E%3Cg fill=%27%233ee6d6%27%3E%3Crect x=%277%27 y=%2713%27 width=%273%27 height=%276%27 rx=%271.5%27/%3E%3Crect x=%2712%27 y=%279%27 width=%273%27 height=%2714%27 rx=%271.5%27/%3E%3Crect x=%2717%27 y=%276%27 width=%273%27 height=%2720%27 rx=%271.5%27/%3E%3Crect x=%2722%27 y=%2711%27 width=%273%27 height=%2710%27 rx=%271.5%27/%3E%3C/g%3E%3C/svg%3E">
 </head>
-<body>
+<body data-tab="echo">
 
   <header class="app-header">
     <h2 class="app-title">
@@ -24,6 +24,7 @@
     </h2>
     <nav class="app-tabs" id="appTabs" aria-label="메뉴">
       <a href="#" data-tab="echo"><b>에코파고</b><small>ECHO TUNING</small></a>
+      <a href="#strategy" data-tab="strategy"><b>강화 전략</b><small>STRATEGY</small></a>
       <a href="#party" data-tab="party"><b>파티 메이커</b><small>TEAM BUILDER</small></a>
     </nav>
     <span class="app-sub" id="appSub">에코 부옵션 강화 시뮬레이터</span>
@@ -161,6 +162,37 @@
     </div>
   </div>
 
+  <!-- 강화 전략: 원하는 부옵션 + 최소 수치 → 성공 확률 · 가장 싼 강화 순서 · 그래프 (strategy.js · strategy-ui.js) -->
+  <main class="sg-page" id="strategyPage">
+    <div class="sg-grid">
+      <section class="panel sg-setup">
+        <div class="pm-head"><h3>원하는 옵션<span class="en">TARGET</span></h3><div class="pm-head-btns" id="sgPresets"></div></div>
+        <p class="pm-hint">원하는 옵션을 1~5개 고르고 최소 수치를 정해요. 고른 옵션이 <b>전부</b> 최소 수치 이상으로 떠야 성공이에요.</p>
+        <div class="filter-group" id="sgChips"></div>
+        <div class="sg-targets" id="sgTargets"></div>
+        <div class="sg-metric-row">
+          <span class="sg-metric-label">무엇을 아낄까</span>
+          <div class="sg-seg" id="sgMetric" role="group" aria-label="아낄 것">
+            <button type="button" data-metric="tuner">튜너</button><button type="button" data-metric="exp">경험치</button><button type="button" data-metric="echo">에코 수</button>
+          </div>
+        </div>
+        <p class="pm-hint" id="sgMetricHint"></p>
+        <p class="sg-note">부옵션은 13종 중에서 중복 없이 5칸이 뜨고, 수치는 확률표대로 뜬다고 보고 정확히 계산해요. 칸 하나 열 때 튜너 10개.</p>
+      </section>
+      <section class="panel sg-out">
+        <div class="pm-head"><h3>결과<span class="en">RESULT</span></h3></div>
+        <div id="sgResult"></div>
+      </section>
+    </div>
+    <section class="panel sg-chart-panel">
+      <div class="pm-head"><h3>얼마나 쓰면 얻을까<span class="en">CHANCE</span></h3></div>
+      <p class="pm-hint">에코를 계속 강화할 때, 쓴 양에 따라 목표 에코를 1개 이상 얻을 확률이에요.</p>
+      <div class="sg-chart-wrap" id="sgChartWrap"><canvas id="sgChart"></canvas></div>
+      <div class="sg-legend" id="sgLegend"></div>
+      <div id="sgCompare"></div>
+    </section>
+  </main>
+
   <!-- 파티 메이커: 보유 캐릭터 체크 → 파티 직접 구성 → 한 장으로 캡처 (party.js) -->
   <main class="party-page" id="partyPage">
     <div class="pm-grid">
@@ -210,7 +242,7 @@
           <span class="logo logo-sm" aria-hidden="true"><span class="wave"><i></i><i></i><i></i><i></i><i></i></span></span>
           명조 툴즈 <span class="badge-release">v5.0</span>
         </div>
-        <p>명조: 워더링 웨이브 팬 도구 모음.<br><b>에코파고</b> — 게임 화면을 공유하면 부옵션을 실시간으로 읽고, 목표 스펙까지의 완성 확률로 계속 강화할지 알려줍니다.<br><b>파티 메이커</b> — 가진 캐릭터로 파티를 짜고 한 장으로 캡처합니다.</p>
+        <p>명조: 워더링 웨이브 팬 도구 모음.<br><b>에코파고</b> — 게임 화면을 공유하면 부옵션을 실시간으로 읽고, 목표 스펙까지의 완성 확률로 계속 강화할지 알려줍니다.<br><b>강화 전략</b> — 원하는 부옵션이 뜰 확률과 가장 싼 강화 순서를 계산합니다.<br><b>파티 메이커</b> — 가진 캐릭터로 파티를 짜고 한 장으로 캡처합니다.</p>
       </div>
       <nav class="footer-links" aria-label="바로가기">
         <div>
@@ -265,5 +297,6 @@
   </div>
   <script type="module" src="./js/roles.js"></script>
   <script type="module" src="./js/party.js"></script>
+  <script type="module" src="./js/strategy-ui.js"></script>
 </body>
 </html>

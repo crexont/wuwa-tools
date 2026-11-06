@@ -69,15 +69,17 @@ let editingOwned = !state.owned.length;
 // 돌파 · 재련 · 사용 횟수를 고치는 중인 캐릭터
 let editingRole = null;
 
-// ───────── 탭 (에코파고 / 파티 메이커) ─────────
+// ───────── 탭 (에코파고 / 강화 전략 / 파티 메이커) ─────────
 // 사이트 이름은 "명조 툴즈", 에코파고와 파티 메이커는 그 안의 탭. 제목 옆 설명은 탭마다 바뀐다
-const SUBTITLE = { echo: '에코 부옵션 강화 시뮬레이터', party: '가진 캐릭터로 파티 짜고 한 장으로 캡처' };
+const SUBTITLE = { echo: '에코 부옵션 강화 시뮬레이터', strategy: '원하는 부옵이 뜰 확률과 가장 싼 강화 순서', party: '가진 캐릭터로 파티 짜고 한 장으로 캡처' };
+const TAB_TITLE = { echo: '에코파고', strategy: '강화 전략', party: '파티 메이커' };
+const HASH_TAB = { '#party': 'party', '#strategy': 'strategy' };
 const tabs = $('appTabs');
 function showTab() {
-  const tab = location.hash === '#party' ? 'party' : 'echo';
+  const tab = HASH_TAB[location.hash] ?? 'echo';
   document.body.dataset.tab = tab;
   $('appSub').textContent = SUBTITLE[tab];
-  document.title = tab === 'party' ? '파티 메이커 — 명조 툴즈' : '에코파고 — 명조 툴즈';
+  document.title = `${TAB_TITLE[tab]} — 명조 툴즈`;
   for (const a of tabs.querySelectorAll('[data-tab]')) a.setAttribute('aria-current', a.dataset.tab === tab ? 'page' : 'false');
   if (tab === 'party') renderCard();   // 에코파고에서 공명자(테마)를 바꿨을 수 있으니 카드 색을 다시 맞춘다
 }
@@ -85,7 +87,7 @@ tabs.addEventListener('click', (e) => {
   const a = e.target.closest('[data-tab]');
   if (!a) return;
   e.preventDefault();
-  history.pushState(null, '', a.dataset.tab === 'party' ? '#party' : location.pathname + location.search);
+  history.pushState(null, '', a.dataset.tab === 'echo' ? location.pathname + location.search : `#${a.dataset.tab}`);
   showTab();
   window.scrollTo(0, 0);
 });
