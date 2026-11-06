@@ -648,7 +648,7 @@ body:not([data-tab="strategy"]) .sg-page { display: none; }
 .sg-req:hover:not(:disabled) { color: var(--text); border-color: var(--dim); }
 .sg-req[aria-pressed="true"] { border-color: var(--cyan); background: var(--cyan); color: var(--cyan-ink); }
 .sg-req:disabled { opacity: 0.35; cursor: default; }
-.sg-presets { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.sg-role { margin: 4px 0 14px; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
 .sg-need-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
 .sg-need-row[hidden] { display: none; }
 .sg-goal-text { color: var(--text); font-size: 12.5px; }
@@ -722,3 +722,9 @@ body:not([data-tab="strategy"]) .sg-page { display: none; }
 .sg-legend i { width: 24px; border-top: 2.5px solid var(--cyan); }
 .sg-legend .is-dash i { border-top: 1.5px dashed var(--muted); }
 .sg-legend .is-dot i { border-top: 1.5px dotted var(--dim); }
+/* 강화 전략의 공명자 줄: 패널이 좁아서 얼굴을 조금 작게 (6칸이 한 줄에 들어가게) */
+#sgRoleStrip .role-tile { width: 58px; font-size: 11px; }
+#sgRoleStrip .role-face { width: 56px; height: 56px; }
+.sg-role .filter-header { flex-wrap: wrap; gap: 4px 10px; }
+.sg-role .role-note { text-align: left; }
+.sg-role-hint { margin: 8px 0 0; }

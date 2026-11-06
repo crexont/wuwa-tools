@@ -216,8 +216,11 @@ function buildTile(role) {
   return btn;
 }
 
-// 메인 화면: 고른 캐릭터 → 최근 고른 캐릭터 → (모자라면 최신 캐릭터) → [전체] 타일
+// 메인 화면: 고른 캐릭터 → 최근 고른 캐릭터 → (모자라면 최신 캐릭터) → [전체] 타일. 에코파고 탭과 강화 전략 탭에 같은 줄을 그린다
 function renderStrip() {
+  for (const el of [strip, $('sgRoleStrip')]) if (el) renderStripInto(el);
+}
+function renderStripInto(strip) {
   const ids = [];
   if (currentId) ids.push(currentId);
   loadRecent().forEach((id) => { if (!ids.includes(id)) ids.push(id); });
@@ -318,6 +321,8 @@ function selectRole(id) {
   setGoalFocus(role);
   setTheme(role);
   renderStrip();
+  // 강화 전략 탭이 이 공명자 유효옵으로 목표를 채우게 알린다 (사용자가 직접 고를 때만)
+  window.dispatchEvent(new CustomEvent('roleselect', { detail: role ? { id: role.id, name: role.name, targets: targetsOf(role) } : null }));
   if (role) {
     applyTargets(targetsOf(role));
     setNote(`${role.name} 추천 유효옵으로 바꿨어요. 아래에서 더 고칠 수 있어요.`);

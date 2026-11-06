@@ -6,14 +6,8 @@ const $ = (id) => document.getElementById(id);
 const KEY = 'echopago.strategy.v1';
 const SLOTS = 5;
 const KEYS = Object.keys(STAT_DATABASE);
-// 프리셋: 유효옵(keys), 꼭(req), 몇 개 이상(need)
-const PRESETS = [
-  { label: '크크', keys: ['크확', '크피'], req: ['크확', '크피'], need: 2 },
-  { label: '크크 공효', keys: ['크확', '크피', '공효'], req: ['크확', '크피', '공효'], need: 3 },
-  { label: '크크 + 공효·공% 중 1', keys: ['크확', '크피', '공효', '공%'], req: ['크확', '크피'], need: 3 },
-  { label: '크크 공효 공%', keys: ['크확', '크피', '공효', '공%'], req: ['크확', '크피', '공효', '공%'], need: 4 },
-  { label: '크크공효공% 중 3', keys: ['크확', '크피', '공효', '공%'], req: [], need: 3 },
-];
+// 처음 열었을 때 기본 목표: 크크 꼭 + 공효 · 공% 중 1
+const DEFAULT_GOAL = { keys: ['크확', '크피', '공효', '공%'], req: ['크확', '크피'], need: 3 };
 const METRIC_HINT = {
   tuner: '튜너가 가장 적게 드는 순서. 에코파고의 "튜너 아끼기"와 같은 기준이에요.',
   exp: '경험치(에코 재료)가 가장 적게 드는 순서예요.',
@@ -32,7 +26,7 @@ function load() {
     .filter((t) => STAT_DATABASE[t?.key])
     .map((t) => ({ key: t.key, minStep: Math.min(Math.max(1, t.minStep | 0), STAT_DATABASE[t.key].values.length), req: oldFormat ? true : !!t.req }))
     .filter((t, i, a) => a.findIndex((x) => x.key === t.key) === i);
-  const st = s ? { targets, need: oldFormat ? targets.length : s.need | 0 } : { ...presetState(PRESETS[2]) };
+  const st = s ? { targets, need: oldFormat ? targets.length : s.need | 0 } : { ...presetState(DEFAULT_GOAL) };
   st.metric = METRICS[s?.metric] ? s.metric : 'tuner';
   clampNeed(st);
   return st;
@@ -72,9 +66,6 @@ function goalText() {
 }
 
 // ───────── 왼쪽: 목표 고르기 ─────────
-function renderPresets() {
-  $('sgPresets').innerHTML = PRESETS.map((p, i) => `<button type="button" class="pm-btn" data-preset="${i}">${p.label}</button>`).join('');
-}
 function renderChips() {
   const chosen = new Set(state.targets.map((t) => t.key));
   $('sgChips').innerHTML = KEYS.map((key) => `
@@ -243,11 +234,21 @@ function niceMax(x) {
 // ───────── 이벤트 ─────────
 function update() { clampNeed(state); save(); renderChips(); renderTargets(); renderMetric(); renderResult(); }
 
-$('sgPresets').addEventListener('click', (e) => {
-  const b = e.target.closest('[data-preset]'); if (!b) return;
-  Object.assign(state, presetState(PRESETS[+b.dataset.preset]));
+// 공명자를 고르면(에코파고 · 강화 전략 어느 탭에서든) 그 공명자 추천 유효옵으로 목표를 채운다
+//   딜러(크확 · 크피 둘 다 유효) = 크크 꼭 + 유효 3개 이상(크크 + 1유효), 서포터 = 꼭 없이 2개 이상(서포터 2유효)
+window.addEventListener('roleselect', (e) => {
+  const role = e.detail;
+  if (!role) { setRoleNote(''); return; }
+  const dealer = role.targets.includes('크확') && role.targets.includes('크피');
+  state.targets = role.targets.filter((key) => STAT_DATABASE[key]).map((key) => ({ key, minStep: 1, req: dealer && (key === '크확' || key === '크피') }));
+  state.need = dealer ? 3 : 2;
   update();
+  setRoleNote(`${role.name} 추천 유효옵으로 채웠어요 (${dealer ? '크크 꼭 + 1유효' : '서포터 2유효'}). 아래에서 더 고칠 수 있어요.`);
 });
+function setRoleNote(text) { $('sgRoleNote').textContent = text || ''; }
+// 목표를 직접 고치면 안내 문구를 지운다
+for (const id of ['sgChips', 'sgTargets', 'sgNeed']) $(id).addEventListener('change', () => setRoleNote(''));
+$('sgTargets').addEventListener('click', (e) => { if (e.target.closest('[data-remove], [data-req]')) setRoleNote(''); });
 $('sgChips').addEventListener('change', (e) => {
   const key = e.target.value;
   if (e.target.checked) state.targets.push({ key, minStep: 1, req: false });
@@ -276,5 +277,4 @@ window.addEventListener('popstate', () => setTimeout(redrawIfShown));
 $('appTabs').addEventListener('click', () => setTimeout(redrawIfShown));
 new ResizeObserver(redrawIfShown).observe($('sgChartWrap'));
 
-renderPresets();
 update();
