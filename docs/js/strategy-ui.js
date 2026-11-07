@@ -137,17 +137,22 @@ function rulesTable(res) {
   const head = Array.from({ length: N }, (_, c) => `<th>${c}개</th>`).join('');   // N개 다 뜨면 이미 성공이라 열이 필요 없음
   const rows = res.rules.map((cells, k) => {
     const label = k === 0 ? '처음 (0칸)' : `${k}칸 연 뒤`;
-    const tds = cells.map((cell) => {
+    const tds = cells.map((cell, c) => {
       if (!cell) return '<td class="sg-na">-</td>';
       if (cell.kind !== 'mixed') return `<td class="sg-${cell.kind}">${word[cell.kind]}</td>`;
+      const td = (main, sub) => `<td class="sg-mixed" title="${main} · ${sub}">${main}<small>${sub}</small></td>`;
+      if (!hasReq || cell.byReq.size === 1) return td('옵션 따라', '어떤 옵션이 몇 수치로 떴는지에 따라 달라요');
       const sorted = [...cell.byReq].sort((a, b) => a[0] - b[0]);
-      // 고정 x개 이상이면 계속, 미만이면 버림 → 한 줄로
+      // 고정 옵션이 x개 이상이면 계속, 미만이면 버림 → 뜬 개수(c)에 맞는 말로
       const cut = sorted.findIndex(([, kd]) => kd === 'go');
       const simple = cut > 0 && sorted.slice(0, cut).every(([, kd]) => kd === 'stop') && sorted.slice(cut).every(([, kd]) => kd === 'go');
-      const detail = !hasReq || cell.byReq.size === 1 ? '어떤 옵션이 떴는지(수치 기준)에 따라 달라요'
-        : simple ? `고정 옵션 ${sorted[cut][0]}개 이상이면 계속, 아니면 버림`
-        : sorted.reverse().map(([r, kd]) => `고정 ${r}개: ${word[kd]}`).join(' · ');
-      return `<td class="sg-mixed" title="${detail}">${hasReq && cell.byReq.size > 1 ? '고정 옵션 따라' : '옵션 따라'}<small>${detail}</small></td>`;
+      if (simple) {
+        const x = sorted[cut][0];
+        if (x === c) return td(c === 1 ? '고정 옵션이면 계속' : '전부 고정 옵션이면 계속', '아니면 버림');
+        if (x === 1) return td('고정 옵션이 있으면 계속', '없으면 버림');
+        return td(`고정 옵션 ${x}개 이상이면 계속`, '아니면 버림');
+      }
+      return td('고정 옵션 개수 따라', sorted.reverse().map(([r, kd]) => `고정 ${r}개: ${word[kd]}`).join(' · '));
     }).join('');
     return `<tr><th>${label}</th>${tds}</tr>`;
   }).join('');
@@ -156,15 +161,15 @@ function rulesTable(res) {
 
 
 const STRATS = [
-  { id: 'best', label: '가장 싼 순서', desc: '위 표대로' },
-  { id: 'untilDead', label: '끝까지 열기', desc: '성공할 수 있는 동안은 계속' },
-  { id: 'openAll', label: '다 까기', desc: '실패해도 +25까지' },
+  { id: 'best', label: '추천 순서', desc: '위 순서표대로 강화' },
+  { id: 'untilDead', label: '될 때까지 강화', desc: '성공할 가능성이 남아 있으면 계속' },
+  { id: 'openAll', label: '무조건 +25', desc: '실패가 정해져도 끝까지 강화' },
 ];
 function renderCompare(res) {
-  $('sgCompare').innerHTML = `<table class="sg-cmp"><thead><tr><th>강화 방법</th><th>성공 확률</th><th>튜너</th><th>경험치</th><th>에코</th></tr></thead><tbody>
+  $('sgCompare').innerHTML = `<table class="sg-cmp"><thead><tr><th>강화 방법</th><th>성공 확률</th><th>튜너</th><th>경험치</th><th>에코 수</th></tr></thead><tbody>
     ${STRATS.map((s) => { const r = res[s.id]; return `<tr class="${s.id === 'best' ? 'is-best' : ''}"><th>${s.label}<small>${s.desc}</small></th><td>${fmtPct(r.p)}%</td>
       ${['tuner', 'exp', 'echo'].map((m) => `<td class="${m === state.metric ? 'is-key' : ''}">${fmtCost(m, perSuccess(r, m))}</td>`).join('')}</tr>`; }).join('')}
-  </tbody></table><p class="sg-note">튜너 · 경험치 · 에코는 성공 1개당 평균이에요.</p>`;
+  </tbody></table><p class="sg-note">성공 확률은 에코 1개 기준, 튜너 · 경험치 · 에코 수는 성공 1개를 얻을 때까지 드는 평균이에요.</p>`;
 }
 
 // ───────── 그래프: 쓴 양에 따라 1개 이상 얻을 확률 ─────────
@@ -201,7 +206,7 @@ function drawChart() {
   for (let i = 0; i <= 4; i++) { const x = (xmax * i) / 4; g.fillText(fmtCost(m, x), X(x), Tp + ph + 8); }
   g.fillStyle = col.muted; g.fillText(`쓴 ${METRICS[m].label} (환급 후)`, L + pw / 2, Tp + ph + 25);
 
-  // 곡선: 다 까기 → 끝까지 열기 → 가장 싼 순서 (위에 그릴수록 강조)
+  // 곡선: 무조건 +25 → 될 때까지 강화 → 추천 순서 (위에 그릴수록 강조)
   const curve = (r, color, width, dash) => {
     g.save(); g.strokeStyle = color; g.lineWidth = width; g.setLineDash(dash); g.beginPath();
     for (let i = 0; i <= 200; i++) { const x = (xmax * i) / 200; const p = 1 - Math.pow(1 - r.p, x / per(r)); const px = X(x), py = Y(p); i ? g.lineTo(px, py) : g.moveTo(px, py); }
