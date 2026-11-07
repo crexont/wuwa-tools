@@ -30,6 +30,7 @@ const FALLBACK_TARGETS = ['크확', '크피', '공%'];
 // 최신 출시순. 이름·속성은 게임 텍스트(3.1)와 출시 이후 캐릭터 목록에서 가져왔다. 방랑자는 속성마다 따로 두고 같은 그림(img)을 쓴다.
 // 캐릭터별 유효옵은 presets.js에 따로 있다.
 export const ROLES = [
+  { id: 'lily',       name: '릴리', elements: ['회절'] },
   { id: 'suoming',    name: '쇄명', elements: ['전도'] },
   { id: 'xin',        name: '여우의 별자리', elements: ['전도'] },
   { id: 'jingran',    name: '경연', elements: ['용융'] },

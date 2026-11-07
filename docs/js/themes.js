@@ -7,6 +7,7 @@
 //   참고: arca.live/b/wuwaarchive/138392697 (채널위키 캐릭터별 색상 정하는 기준)
 // 일러스트는 img/theme/<그림 이름>.webp (방랑자 넷은 rover.webp 하나를 같이 쓴다).
 export const THEME_COLORS = {
+  'lily':           '#c8b6dd',   // 릴리 — 머리색(연보라) 그대로 (공식 프로필 그림 머리 부분 평균)
   'suoming':        '#d6404a',   // 쇄명
   'xin':            '#c8222a',   // 여우의 별자리
   'jingran':        '#4fc3c9',   // 경연

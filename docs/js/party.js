@@ -64,7 +64,7 @@ function setBuild(id, key, value) {
 
 // 지금 고르는 칸 { p: 파티 번호, k: 칸 번호 }
 let active = null;
-// 보유 캐릭터 체크 화면(60명 전부)을 펼쳤는지. 처음 쓰는 사람만 펼친 채로 시작
+// 보유 캐릭터 체크 화면(전원)을 펼쳤는지. 처음 쓰는 사람만 펼친 채로 시작
 let editingOwned = !state.owned.length;
 // 돌파 · 재련 · 사용 횟수를 고치는 중인 캐릭터
 let editingRole = null;
@@ -113,7 +113,7 @@ function tile(role, cls, onClick, note = '') {
 
 // ───────── 보유 캐릭터 ─────────
 // 평소: 가진 캐릭터만 작게 + 캐릭터마다 사용 횟수(1회/2회)
-// [캐릭터 체크하기]: 60명 전부 펼쳐서 켜고 끄기
+// [캐릭터 체크하기]: 전원 펼쳐서 켜고 끄기
 function renderOwned() {
   const grid = $('pmOwnedGrid');
   grid.textContent = '';
