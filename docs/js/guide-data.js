@@ -1,12 +1,10 @@
 // guide-data.js — 명조 툴즈 v6.0: 에코 가이드 데이터
 // 아카라이브 "명조 공명자별 에코 정리글 (3.7버전 기준)" (arca.live/b/wutheringwaves/186746298)을 그대로 옮겼다.
-// 글 내용은 나무위키 각 공명자 문서의 「에코」 항목을 요약한 것 (CC BY-NC-SA 2.0 KR).
+// 내용은 공식 공략(wuwaguide.kurogames.com) 기준이고, 정리할 때 나무위키 각 공명자 문서의 「에코」 항목을 참고했다.
 // 키 = roles.js ROLES id. 순서 = 글 순서 (응결 > 용융 > 전도 > 기류 > 회절 > 인멸, 방랑자는 속성 맨 끝).
 // cost: 코스트 배치 (기본 43311, 다르면 강조) / main: 주옵 / subs: 유효옵
 // builds: 역할·조건(when)별 에코 세트(set) + 메인 에코(echo, 맨 위 슬롯) + 메모(note)
 // 값이 null이면 아직 정리 안 된 공명자 (출시 전 등)
-export const GUIDE_SOURCE = 'https://arca.live/b/wutheringwaves/186746298';
-export const GUIDE_VERSION = '3.7';
 
 export const GUIDE = {
   baizhi: { cost: "43311", main: "4코 치유 보너스 · 3코 공효 · 1코 HP%", subs: "공효 · HP% (크크 안 챙겨도 됨)", builds: [

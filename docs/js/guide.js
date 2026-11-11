@@ -3,7 +3,7 @@
 // 공명자 선택은 사이트 전체에서 하나: 위 얼굴 줄(roles.js renderStrip)이나 아래 목록에서 고르면 roles.js selectRole이
 // 테마 · 에코파고 유효옵 · 강화 전략 목표를 같이 바꾸고, 여기서는 "roleselect" 이벤트를 받아 큰 카드를 다시 그린다.
 import { ROLES, ELEMENTS, faceUrl, selectRole } from './roles.js';
-import { GUIDE, GUIDE_SOURCE, GUIDE_VERSION } from './guide-data.js';
+import { GUIDE } from './guide-data.js';
 
 const ROLE_KEY = 'echopago.role.v1';
 const FILTER_KEY = 'echopago.guideFilter.v1';
@@ -124,7 +124,6 @@ function init() {
   renderTabs();
   renderList();
   renderFeatured();
-  $('gdSource').innerHTML = `출처: <a href="${GUIDE_SOURCE}" target="_blank" rel="noopener">아카라이브 「명조 공명자별 에코 정리글」</a> (${GUIDE_VERSION}버전 기준) · 나무위키 각 공명자 문서의 「에코」 항목을 요약 (CC BY-NC-SA 2.0 KR)`;
 
   // 다른 탭(에코파고 · 강화 전략)이나 얼굴 줄에서 고르면 큰 카드를 바꾼다
   window.addEventListener('roleselect', (e) => setCurrent(e.detail?.id ?? null));
