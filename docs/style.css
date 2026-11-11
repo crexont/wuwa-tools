@@ -506,6 +506,7 @@ body:not([data-tab="echo"]) .table-section { display: none; }
 body:not([data-tab="party"]) .party-page { display: none; }
 body:not([data-tab="strategy"]) .sg-page { display: none; }
 body:not([data-tab="guide"]) .gd-page { display: none; }
+body:not([data-tab="practice"]) .pr-page { display: none; }
 
 /* ───────── 파티 메이커 ───────── */
 .party-page { display: flex; flex-direction: column; gap: 22px; max-width: 1350px; margin: 0 auto; padding: 0 28px; }
@@ -602,7 +603,7 @@ body:not([data-tab="guide"]) .gd-page { display: none; }
   .app-tabs a { flex: 1; align-items: center; padding: 8px 0; }
   .app-tabs a[aria-current="page"]::after { left: 0; right: 0; }
   .app-sub { display: none; }
-  .app-header, .layout-container, .table-section, .party-page, .gd-page { padding-left: 16px; padding-right: 16px; }
+  .app-header, .layout-container, .table-section, .party-page, .gd-page, .pr-page { padding-left: 16px; padding-right: 16px; }
   .app-footer { padding-left: 16px; padding-right: 16px; }
 }
 /* 가진 캐릭터: 평소엔 가진 것만 + 사용 횟수, 체크할 때만 60명 전부 */
@@ -799,6 +800,71 @@ body:not([data-tab="guide"]) .gd-page { display: none; }
   .gd-build { grid-template-columns: 1fr; }
   .gd-card .gd-when { padding-bottom: 0; border-right: none; color: var(--cyan-light); font-weight: 600; }
   .gd-card .gd-set { padding-top: 4px; }
-  .app-tabs a b { font-size: 13px; }
-  .app-tabs a small { letter-spacing: 0.12em; font-size: 8.5px; }
+}
+
+/* ───────── 튜닝 연습장 ───────── */
+.pr-page { max-width: 1350px; margin: 0 auto; padding: 0 28px; }
+.pr-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 22px; align-items: start; }
+@media (max-width: 1000px) { .pr-grid { grid-template-columns: minmax(0, 1fr); } }
+.pr-page .pm-head h3 { display: flex; align-items: baseline; }
+.pr-toggle { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: 12.5px; font-weight: 600; cursor: pointer; }
+.pr-toggle input { accent-color: var(--cyan); }
+.pr-strip { margin-top: 12px; }
+#prRoleStrip .role-tile { width: 58px; font-size: 11px; }
+#prRoleStrip .role-face { width: 56px; height: 56px; }
+.pr-goal { margin: 10px 0 12px; color: var(--muted); font-size: 12.5px; line-height: 1.6; }
+.pr-goal b { color: var(--text); }
+.pr-goal a { color: var(--cyan); }
+.pr-goal-src { color: var(--dim); }
+.pr-box .stat-item { cursor: default; }
+.pr-box .stat-item:hover { background: none; }
+.pr-box .stat-item.pr-next { box-shadow: inset 2px 0 0 var(--cyan); }
+.pr-new { animation: pr-pop 0.45s ease-out; }
+@keyframes pr-pop { from { background: rgba(var(--cyan-rgb), 0.28); } to { background: transparent; } }
+@media (prefers-reduced-motion: reduce) { .pr-new { animation: none; } }
+
+/* 추천 줄 */
+.pr-hint { display: flex; flex-direction: column; gap: 3px; margin-top: 12px; padding: 10px 14px; border: 1px solid var(--line); font-size: 14px; }
+.pr-hint[hidden] { display: none; }
+.pr-hint small { color: var(--muted); font-size: 12px; }
+.pr-hint.is-go { box-shadow: inset 2px 0 0 var(--cyan); background: linear-gradient(90deg, var(--cyan-soft), transparent 70%); }
+.pr-hint.is-go b { color: var(--cyan); }
+.pr-hint.is-stop { box-shadow: inset 2px 0 0 var(--amber); background: linear-gradient(90deg, var(--amber-soft), transparent 70%); }
+.pr-hint.is-stop b { color: var(--amber); }
+.pr-hint.is-done { border-color: rgba(var(--cyan-rgb), 0.6); background: var(--cyan-soft); }
+.pr-hint.is-done b { color: var(--cyan); font-size: 16px; }
+
+.pr-actions { display: flex; gap: 10px; margin-top: 12px; }
+.pr-actions .btn-primary { flex: 1; }
+.pr-actions .btn-primary:disabled { opacity: 0.4; cursor: default; filter: none; }
+.pr-drop { min-width: 110px; font-size: 14px; }
+.pr-drop:hover:not(:disabled) { color: var(--amber); border-color: var(--amber); }
+.pr-note { min-height: 1.4em; margin: 8px 0 0; color: var(--cyan); font-size: 12.5px; }
+
+/* 기록 */
+.pr-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin: 14px 0; }
+.pr-stat { display: flex; flex-direction: column; gap: 4px; padding: 10px 12px; border: 1px solid var(--line); background: rgba(0, 0, 0, 0.25); }
+.pr-stat span { color: var(--muted); font-size: 12px; }
+.pr-stat b { color: var(--text); font-family: var(--num); font-size: 22px; font-weight: 600; line-height: 1.1; }
+.pr-stat b small { margin-left: 2px; color: var(--muted); font-size: 12px; }
+.pr-stat:first-child b { color: var(--cyan); }
+.pr-cmp { width: 100%; }
+.pr-luck { margin: 10px 0 0; color: var(--muted); font-size: 13px; }
+.pr-luck b { color: var(--text); }
+.pr-luck .is-good { color: var(--cyan); font-weight: 700; }
+.pr-luck .is-bad { color: var(--amber); font-weight: 700; }
+.pr-sub { display: flex; align-items: baseline; margin: 18px 0 8px; padding-bottom: 6px; border-bottom: 1px solid var(--line); font-size: 13px; }
+.pr-kept { display: flex; flex-direction: column; gap: 4px; }
+.pr-kept-row { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; padding: 6px 10px; border: 1px solid var(--line); background: rgba(0, 0, 0, 0.2); }
+.pr-kept-no { min-width: 30px; color: var(--dim); font-family: var(--num); font-size: 12px; font-weight: 600; }
+.pr-kept-stat { display: inline-flex; align-items: center; gap: 3px; color: var(--dim); font-family: var(--num); font-size: 12px; font-weight: 600; }
+.pr-kept-stat .stat-icon { width: 14px; height: 14px; }
+.pr-kept-stat.is-valid { color: var(--cyan-light); }
+.pr-kept-stat.is-valid .stat-icon { color: var(--cyan); }
+@media (max-width: 600px) {
+  .pr-page { padding: 0 16px; }
+  .pr-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .echo-top .stat-list-hint { font-size: 11px; }
+  .app-tabs a b { font-size: 12px; }
+  .app-tabs a small { display: none; }
 }

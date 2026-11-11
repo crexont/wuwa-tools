@@ -217,9 +217,9 @@ function buildTile(role) {
   return btn;
 }
 
-// 메인 화면: 고른 캐릭터 → 최근 고른 캐릭터 → (모자라면 최신 캐릭터) → [전체] 타일. 에코파고 · 강화 전략 · 에코 가이드 탭에 같은 줄을 그린다
+// 메인 화면: 고른 캐릭터 → 최근 고른 캐릭터 → (모자라면 최신 캐릭터) → [전체] 타일. 에코파고 · 강화 전략 · 튜닝 연습장 · 에코 가이드 탭에 같은 줄을 그린다
 function renderStrip() {
-  for (const el of [strip, $('sgRoleStrip'), $('gdRoleStrip')]) if (el) renderStripInto(el);
+  for (const el of [strip, $('sgRoleStrip'), $('gdRoleStrip'), $('prRoleStrip')]) if (el) renderStripInto(el);
 }
 function renderStripInto(strip) {
   const ids = [];

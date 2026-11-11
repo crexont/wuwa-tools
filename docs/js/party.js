@@ -71,9 +71,9 @@ let editingRole = null;
 
 // ───────── 탭 (에코파고 / 강화 전략 / 파티 메이커) ─────────
 // 사이트 이름은 "명조 툴즈", 에코파고와 파티 메이커는 그 안의 탭. 제목 옆 설명은 탭마다 바뀐다
-const SUBTITLE = { echo: '에코 부옵션 강화 시뮬레이터', strategy: '원하는 부옵이 뜰 확률과 가장 싼 강화 순서', party: '가진 캐릭터로 파티 짜고 한 장으로 캡처', guide: '공명자별 에코 세트 · 메인 에코 · 유효옵' };
-const TAB_TITLE = { echo: '에코파고', strategy: '강화 전략', party: '파티 메이커', guide: '에코 가이드' };
-const HASH_TAB = { '#party': 'party', '#strategy': 'strategy', '#guide': 'guide' };
+const SUBTITLE = { echo: '에코 부옵션 강화 시뮬레이터', strategy: '원하는 부옵이 뜰 확률과 가장 싼 강화 순서', party: '가진 캐릭터로 파티 짜고 한 장으로 캡처', guide: '공명자별 에코 세트 · 메인 에코 · 유효옵', practice: '실제 확률대로 에코 강화 연습' };
+const TAB_TITLE = { echo: '에코파고', strategy: '강화 전략', party: '파티 메이커', guide: '에코 가이드', practice: '튜닝 연습장' };
+const HASH_TAB = { '#party': 'party', '#strategy': 'strategy', '#guide': 'guide', '#practice': 'practice' };
 const tabs = $('appTabs');
 function showTab() {
   const tab = HASH_TAB[location.hash] ?? 'echo';

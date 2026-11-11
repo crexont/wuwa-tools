@@ -25,6 +25,7 @@
     <nav class="app-tabs" id="appTabs" aria-label="메뉴">
       <a href="#" data-tab="echo"><b>에코파고</b><small>ECHO TUNING</small></a>
       <a href="#strategy" data-tab="strategy"><b>강화 전략</b><small>STRATEGY</small></a>
+      <a href="#practice" data-tab="practice"><b>튜닝 연습장</b><small>PRACTICE</small></a>
       <a href="#guide" data-tab="guide"><b>에코 가이드</b><small>ECHO GUIDE</small></a>
       <a href="#party" data-tab="party"><b>파티 메이커</b><small>TEAM BUILDER</small></a>
     </nav>
@@ -200,6 +201,36 @@
     </section>
   </main>
 
+  <!-- 튜닝 연습장: 실제 확률대로 에코를 강화해 보는 연습 (practice.js · practice-ui.js), 목표는 강화 전략 탭과 같음 -->
+  <main class="pr-page" id="practicePage">
+    <div class="pr-grid">
+      <section class="panel pr-echo">
+        <div class="pm-head"><h3>튜닝 연습<span class="en">PRACTICE</span></h3>
+          <label class="pr-toggle"><input type="checkbox" id="prHintToggle" checked> 추천 보기</label></div>
+        <div class="role-strip pr-strip" id="prRoleStrip"></div>
+        <p class="pr-goal" id="prGoal"></p>
+        <div class="echo-box pr-box">
+          <div class="echo-top"><span class="echo-stars" aria-hidden="true">★★★★★</span><span class="echo-lv" id="prLevel">+0</span><span class="stat-list-hint" id="prSpent"></span></div>
+          <div id="prSlots"></div>
+        </div>
+        <div class="pr-hint" id="prHint" hidden></div>
+        <div class="pr-actions">
+          <button type="button" class="btn-primary" id="prUp">강화 +5</button>
+          <button type="button" class="pm-btn pr-drop" id="prDrop">버리기</button>
+        </div>
+        <p class="pr-note" id="prNote" aria-live="polite"></p>
+        <p class="sg-note">재화는 무제한이에요. 부옵션은 13종 중에서 중복 없이 뜨고, 수치는 확률표대로 떠요. 단축키: Space 강화 · X 버리기</p>
+      </section>
+      <section class="panel pr-rec">
+        <div class="pm-head"><h3>기록<span class="en">RECORD</span></h3><button type="button" class="pm-btn" id="prReset">기록 지우기</button></div>
+        <div class="pr-stats" id="prStats"></div>
+        <div id="prCompare"></div>
+        <h4 class="pr-sub">완성한 에코<span class="en">KEPT</span></h4>
+        <div class="pr-kept" id="prKept"></div>
+      </section>
+    </div>
+  </main>
+
   <!-- 에코 가이드: 공명자별 에코 세트 · 메인 에코 · 주옵 · 유효옵 (guide.js, 데이터는 guide-data.js) -->
   <main class="gd-page" id="guidePage">
     <div class="gd-grid">
@@ -326,5 +357,6 @@
   <script type="module" src="./js/party.js"></script>
   <script type="module" src="./js/strategy-ui.js"></script>
   <script type="module" src="./js/guide.js"></script>
+  <script type="module" src="./js/practice-ui.js"></script>
 </body>
 </html>
