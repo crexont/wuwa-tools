@@ -217,9 +217,9 @@ function buildTile(role) {
   return btn;
 }
 
-// 메인 화면: 고른 캐릭터 → 최근 고른 캐릭터 → (모자라면 최신 캐릭터) → [전체] 타일. 에코파고 탭과 강화 전략 탭에 같은 줄을 그린다
+// 메인 화면: 고른 캐릭터 → 최근 고른 캐릭터 → (모자라면 최신 캐릭터) → [전체] 타일. 에코파고 · 강화 전략 · 에코 가이드 탭에 같은 줄을 그린다
 function renderStrip() {
-  for (const el of [strip, $('sgRoleStrip')]) if (el) renderStripInto(el);
+  for (const el of [strip, $('sgRoleStrip'), $('gdRoleStrip')]) if (el) renderStripInto(el);
 }
 function renderStripInto(strip) {
   const ids = [];
@@ -313,7 +313,7 @@ function applyTargets(targets) {
   applying = false;
 }
 
-function selectRole(id) {
+export function selectRole(id) {   // 에코 가이드 탭의 카드 목록에서도 부른다
   const role = findRole(id);
   currentId = role ? role.id : null;
   store.set(ROLE_KEY, currentId);

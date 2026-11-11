@@ -25,6 +25,7 @@
     <nav class="app-tabs" id="appTabs" aria-label="메뉴">
       <a href="#" data-tab="echo"><b>에코파고</b><small>ECHO TUNING</small></a>
       <a href="#strategy" data-tab="strategy"><b>강화 전략</b><small>STRATEGY</small></a>
+      <a href="#guide" data-tab="guide"><b>에코 가이드</b><small>ECHO GUIDE</small></a>
       <a href="#party" data-tab="party"><b>파티 메이커</b><small>TEAM BUILDER</small></a>
     </nav>
     <span class="app-sub" id="appSub">에코 부옵션 강화 시뮬레이터</span>
@@ -199,6 +200,26 @@
     </section>
   </main>
 
+  <!-- 에코 가이드: 공명자별 에코 세트 · 메인 에코 · 주옵 · 유효옵 (guide.js, 데이터는 guide-data.js) -->
+  <main class="gd-page" id="guidePage">
+    <div class="gd-grid">
+      <div class="gd-side">
+        <section class="panel">
+          <div class="pm-head"><h3>공명자<span class="en">RESONATOR</span></h3></div>
+          <div class="role-strip gd-strip" id="gdRoleStrip"></div>
+          <div class="gd-featured" id="gdFeatured"></div>
+        </section>
+      </div>
+      <section class="panel gd-all">
+        <div class="pm-head"><h3>전체 보기<span class="en">ALL</span></h3></div>
+        <p class="pm-hint">왼쪽은 역할이나 언제 쓰는지(돌파 · 파티), 오른쪽은 에코 세트와 맨 위 칸에 끼우는 <b>메인 에코</b>예요. 코스트는 기본 43311과 다를 때만 강조해요.</p>
+        <div class="role-tabs gd-tabs" id="gdTabs" role="group" aria-label="속성"></div>
+        <div class="gd-list" id="gdList"></div>
+        <p class="sg-note" id="gdSource"></p>
+      </section>
+    </div>
+  </main>
+
   <!-- 파티 메이커: 보유 캐릭터 체크 → 파티 직접 구성 → 한 장으로 캡처 (party.js) -->
   <main class="party-page" id="partyPage">
     <div class="pm-grid">
@@ -304,5 +325,6 @@
   <script type="module" src="./js/roles.js"></script>
   <script type="module" src="./js/party.js"></script>
   <script type="module" src="./js/strategy-ui.js"></script>
+  <script type="module" src="./js/guide.js"></script>
 </body>
 </html>

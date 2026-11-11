@@ -505,6 +505,7 @@ body:not([data-tab="echo"]) .layout-container,
 body:not([data-tab="echo"]) .table-section { display: none; }
 body:not([data-tab="party"]) .party-page { display: none; }
 body:not([data-tab="strategy"]) .sg-page { display: none; }
+body:not([data-tab="guide"]) .gd-page { display: none; }
 
 /* ───────── 파티 메이커 ───────── */
 .party-page { display: flex; flex-direction: column; gap: 22px; max-width: 1350px; margin: 0 auto; padding: 0 28px; }
@@ -601,7 +602,7 @@ body:not([data-tab="strategy"]) .sg-page { display: none; }
   .app-tabs a { flex: 1; align-items: center; padding: 8px 0; }
   .app-tabs a[aria-current="page"]::after { left: 0; right: 0; }
   .app-sub { display: none; }
-  .app-header, .layout-container, .table-section, .party-page { padding-left: 16px; padding-right: 16px; }
+  .app-header, .layout-container, .table-section, .party-page, .gd-page { padding-left: 16px; padding-right: 16px; }
   .app-footer { padding-left: 16px; padding-right: 16px; }
 }
 /* 가진 캐릭터: 평소엔 가진 것만 + 사용 횟수, 체크할 때만 60명 전부 */
@@ -728,3 +729,76 @@ body:not([data-tab="strategy"]) .sg-page { display: none; }
 .sg-role .filter-header { flex-wrap: wrap; gap: 4px 10px; }
 .sg-role .role-note { text-align: left; }
 .sg-role-hint { margin: 8px 0 0; }
+
+/* ───────── 에코 가이드 ───────── */
+/* PC: 왼쪽 = 공명자 줄 + 고른 공명자 큰 카드(스크롤해도 따라옴), 오른쪽 = 속성별 전체 카드 목록. 휴대폰은 위아래로 */
+.gd-page { max-width: 1350px; margin: 0 auto; padding: 0 28px; }
+.gd-grid { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: 22px; align-items: start; }
+@media (min-width: 1001px) {
+  .gd-side { position: sticky; top: 16px; max-height: calc(100vh - 32px); overflow-y: auto; scrollbar-width: thin; }
+}
+@media (max-width: 1000px) { .gd-grid { grid-template-columns: minmax(0, 1fr); } }
+.gd-grid > * { min-width: 0; }
+.gd-page .pm-head h3 { display: flex; align-items: baseline; }
+.gd-strip { margin-top: 12px; }
+.gd-featured { margin-top: 14px; }
+.gd-pick { margin: 0; padding: 28px 0; color: var(--dim); font-size: 13px; text-align: center; border: 1px dashed var(--line); }
+.gd-tabs { margin-bottom: 14px; }
+.gd-list { display: flex; flex-direction: column; gap: 18px; }
+.gd-group .role-group-head { margin-bottom: 10px; color: var(--el); }
+.gd-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 10px; align-items: start; }
+
+/* 카드: 머리(얼굴 · 이름 · 코스트) / 역할별 세트 줄 / 주옵 · 유효옵 */
+.gd-card { position: relative; border: 1px solid var(--line); background: rgba(0, 0, 0, 0.25); }
+.gd-card.is-on { border-color: rgba(var(--cyan-rgb), 0.6); box-shadow: inset 2px 0 0 var(--cyan); }
+.gd-card-head { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-bottom: 1px solid var(--line);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--el) 16%, transparent), transparent 70%); }
+.gd-face { flex: none; width: 36px; height: 36px; }
+.gd-card-title { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.gd-card-title strong { color: var(--text); font-size: 14px; }
+.gd-card-el { display: inline-flex; align-items: center; gap: 4px; color: var(--muted); font-size: 11px; }
+.gd-card-el .el-icon { width: 11px; height: 11px; }
+.gd-cost { display: flex; flex-direction: column; align-items: flex-end; color: var(--dim); font-family: var(--num); font-size: 13px; font-weight: 600; line-height: 1.2; white-space: nowrap; }
+.gd-cost small { font-family: 'IBM Plex Sans KR', sans-serif; font-size: 10px; font-weight: 500; }
+.gd-cost.is-diff { color: var(--cyan); }
+/* 목록 카드는 머리 전체가 고르기 버튼 */
+.gd-card-pick { position: absolute; z-index: 1; left: 0; right: 0; top: 0; height: 55px; padding: 0; border: none; background: transparent; cursor: pointer; }
+.gd-card-pick:hover ~ .gd-card-head strong { color: var(--cyan); }
+.gd-card-pick:focus-visible { outline: 1px solid var(--cyan); outline-offset: -1px; }
+
+.gd-builds { display: flex; flex-direction: column; }
+.gd-build { display: grid; grid-template-columns: 30% 1fr; border-bottom: 1px solid var(--line); }
+.gd-when { padding: 9px 10px; border-right: 1px solid var(--line); color: var(--muted); font-size: 12px; line-height: 1.45; }
+.gd-set { padding: 9px 12px; font-size: 13px; line-height: 1.5; min-width: 0; }
+.gd-set > b { color: var(--text); }
+.gd-echo { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; margin-top: 3px; }
+.gd-echo span { color: var(--dim); font-size: 11.5px; }
+.gd-echo span::before { content: ''; display: inline-block; width: 4px; height: 4px; margin: 0 6px 2px 0; background: var(--cyan); transform: rotate(45deg); }
+.gd-echo strong { color: var(--cyan); }
+.gd-memo { margin: 4px 0 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
+.gd-stats { display: grid; grid-template-columns: auto 1fr; gap: 4px 10px; margin: 0; padding: 9px 12px; color: var(--muted); font-size: 12px; line-height: 1.5; }
+.gd-stats dt { color: var(--dim); font-weight: 600; white-space: nowrap; }
+.gd-stats dd { margin: 0; }
+.gd-empty { margin: 0; padding: 14px 12px; color: var(--dim); font-size: 12.5px; }
+
+/* 고른 공명자 큰 카드 */
+.gd-card.is-big { border-color: rgba(var(--cyan-rgb), 0.45); }
+.gd-card.is-big .gd-card-head { padding: 12px 14px; }
+.gd-card.is-big .gd-face { width: 56px; height: 56px; }
+.gd-card.is-big .gd-card-title strong { font-size: 18px; }
+.gd-card.is-big .gd-card-el { font-size: 12px; }
+.gd-card.is-big .gd-cost { font-size: 16px; }
+.gd-card.is-big .gd-when { padding: 12px; font-size: 13px; }
+.gd-card.is-big .gd-set { padding: 12px 14px; font-size: 14.5px; }
+.gd-card.is-big .gd-echo span { font-size: 12px; }
+.gd-card.is-big .gd-memo { font-size: 12.5px; }
+.gd-stats.is-big { padding: 12px 14px; font-size: 13px; }
+.gd-stats.is-big dd { color: var(--text); }
+@media (max-width: 600px) {
+  .gd-page { padding: 0 16px; }
+  .gd-build { grid-template-columns: 1fr; }
+  .gd-card .gd-when { padding-bottom: 0; border-right: none; color: var(--cyan-light); font-weight: 600; }
+  .gd-card .gd-set { padding-top: 4px; }
+  .app-tabs a b { font-size: 13px; }
+  .app-tabs a small { letter-spacing: 0.12em; font-size: 8.5px; }
+}
