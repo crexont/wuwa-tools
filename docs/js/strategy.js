@@ -176,3 +176,31 @@ export function rulesOf(model, opt) {
   }
   return rows;
 }
+
+// ───────── 목표 저장값 (강화 전략 탭 · 튜닝 연습장이 같이 읽는다) ─────────
+export const GOAL_KEY = 'echopago.strategy.v1';
+// 처음 열었을 때 기본 목표: 크크 고정 + 공효 · 공% 중 1
+const DEFAULT_GOAL = { keys: ['크확', '크피', '공효', '공%'], req: ['크확', '크피'], need: 3 };
+
+/** 저장된 목표 { targets, need, metric } (없거나 깨졌으면 기본 목표) */
+export function loadGoal() {
+  let s = null;
+  try { s = JSON.parse(localStorage.getItem(GOAL_KEY)); } catch { /* 무시 */ }
+  const oldFormat = s && !('need' in s);                     // 예전 저장(전부 고정)은 그대로 살린다
+  const targets = (Array.isArray(s?.targets) ? s.targets : [])
+    .filter((t) => STAT_DATABASE[t?.key])
+    .map((t) => ({ key: t.key, minStep: Math.min(Math.max(1, t.minStep | 0), STAT_DATABASE[t.key].values.length), req: oldFormat ? true : !!t.req }))
+    .filter((t, i, a) => a.findIndex((x) => x.key === t.key) === i);
+  const st = s ? { targets, need: oldFormat ? targets.length : s.need | 0 }
+    : { targets: DEFAULT_GOAL.keys.map((key) => ({ key, minStep: 1, req: DEFAULT_GOAL.req.includes(key) })), need: DEFAULT_GOAL.need };
+  st.metric = METRICS[s?.metric] ? s.metric : 'tuner';
+  clampNeed(st);
+  return st;
+}
+// 고정 옵션은 5개까지, 몇 개 이상은 [고정 개수(최소 1) ~ min(5, 유효 개수)]
+export function clampNeed(st) {
+  let req = st.targets.filter((t) => t.req);
+  while (req.length > SLOTS) { req.at(-1).req = false; req = st.targets.filter((t) => t.req); }
+  const lo = Math.max(1, req.length), hi = Math.min(SLOTS, st.targets.length);
+  st.need = Math.min(Math.max(st.need || hi, lo), Math.max(lo, hi));
+}

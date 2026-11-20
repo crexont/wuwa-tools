@@ -23,6 +23,7 @@ let changedAt = Array(SLOT_COUNT).fill(0);      // 줄별: 변화가 처음 감�
 let pending = Array(SLOT_COUNT).fill(null);     // 줄별: 확정값과 다른 결과가 한 번 나왔을 때 그 결과 (한 번 더 나오면 교체)
 let stableLum = 0;                              // 평소 옵션창 밝기 (어두워짐 감지 기준)
 let dimSince = 0;                               // 어두워지기 시작한 시각
+let gen = 0;                                    // invalidateScan마다 +1 (읽는 도중 초기화되면 그 결과는 버린다)
 
 // app.js와 연결: 슬롯 배열·고정 여부는 app.js가 들고 있으므로 꺼내 쓰는 함수를 받는다
 let getSlots = () => [], getPinned = () => [], isActive = () => false, onRowRead = () => {};
@@ -125,8 +126,9 @@ export async function scanOnce(src, now) {
   const i = ready[0];
   // 더 급한 줄(새로 열리는 줄)이 아직 연출 중이면, 덜 급한 줄을 읽느라 OCR을 붙잡지 말고 기다린다
   if (i !== undefined && !(waiting.length && rank(waiting[0]) < rank(i))) {
+    const myGen = gen;
     const result = await readSlot(src, i);
-    if (!getPinned()[i] && isActive()) {                // 읽는 동안 수동 고정/공유 중지된 경우 무시
+    if (myGen === gen && !getPinned()[i] && isActive()) {   // 읽는 동안 초기화 · 수동 고정 · 공유 중지된 경우 무시
       readSig[i] = sigs[i];
       changedAt[i] = 0;
       applyRead(i, result);
@@ -145,6 +147,7 @@ export async function scanOnce(src, now) {
 
 // 모든 줄을 다시 읽게 한다 (새 에코, 인식 영역 변경 등)
 export function invalidateScan() {
+  gen++;
   readSig = Array(SLOT_COUNT).fill(null);
   prevSig = Array(SLOT_COUNT).fill(null);
   prevSig2 = Array(SLOT_COUNT).fill(null);

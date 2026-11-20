@@ -1,23 +1,19 @@
 // practice-ui.js — 명조 툴즈 v6.0: 튜닝 연습장 탭 화면
 // 재화는 무제한. [강화]를 누르면 다음 칸이 실제 확률대로 열리고, 추천(강화 전략 최적 순서)을 옆에 보여준다.
 // 목표는 강화 전략 탭 저장값(echopago.strategy.v1)을 그대로 쓴다 → 공명자를 고르거나 강화 전략 탭에서 고치면 같이 바뀜.
-import { STAT_DATABASE, evaluateStepTier } from './data.js';
-import { METRICS } from './strategy.js';
+import { STAT_DATABASE, evaluateStepTier, statIcon } from './data.js';
+import { METRICS, loadGoal } from './strategy.js';
 import { prepare, rollSlot, verdict, echoCost, expectedPerSuccess, SLOTS } from './practice.js';
 
 const $ = (id) => document.getElementById(id);
 const page = $('practicePage');
-const GOAL_KEY = 'echopago.strategy.v1';
 const KEY = 'echopago.practice.v1';
 const KEPT_MAX = 12;
-// 강화 전략 탭을 한 번도 안 열었을 때 기본 목표 (strategy-ui.js DEFAULT_GOAL과 같음)
-const DEFAULT_GOAL = { targets: [{ key: '크확', minStep: 1, req: true }, { key: '크피', minStep: 1, req: true }, { key: '공효', minStep: 1, req: false }, { key: '공%', minStep: 1, req: false }], need: 3, metric: 'tuner' };
 
 const store = {
   get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } },
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* 무시 */ } },
 };
-const statIcon = (key) => `<i class="stat-icon" style="--icon:url('./icons/${STAT_DATABASE[key].icon}.png')" aria-hidden="true"></i>`;
 const valText = (key, step) => `+${STAT_DATABASE[key].values[step - 1]}${STAT_DATABASE[key].isPercent ? '%' : ''}`;
 const fmtInt = (n) => Math.round(n).toLocaleString('ko-KR');
 const fmtExp = (n) => (n >= 10000 ? `${(n / 10000).toFixed(n >= 1e6 ? 0 : 1)}만` : fmtInt(n));
@@ -27,13 +23,6 @@ let rec = null;       // 기록 { sig, done, echoes, tuner, exp, follow, decisio
 let lastNew = -1;     // 방금 열린 칸 (깜빡임용)
 
 // ───────── 목표 ─────────
-function readGoal() {
-  const s = store.get(GOAL_KEY);
-  const targets = (Array.isArray(s?.targets) ? s.targets : []).filter((t) => STAT_DATABASE[t?.key])
-    .map((t) => ({ key: t.key, minStep: Math.max(1, t.minStep | 0), req: !!t.req }));
-  if (!s || !targets.length) return DEFAULT_GOAL;
-  return { targets, need: 'need' in s ? s.need | 0 : targets.length, metric: METRICS[s.metric] ? s.metric : 'tuner' };
-}
 const sigOf = (g) => JSON.stringify([g.targets.map((t) => [t.key, t.minStep, t.req ? 1 : 0]), g.need, g.metric]);
 const nameOf = (t) => STAT_DATABASE[t.key].name + (t.minStep > 1 ? ` ${valText(t.key, t.minStep)}↑` : '');
 function goalText(g) {
@@ -52,7 +41,7 @@ const save = () => store.set(KEY, rec);
 
 // 목표가 바뀌면(공명자 선택 · 강화 전략 탭 수정) 기록을 새로 시작한다
 function syncGoal() {
-  const g = readGoal();
+  const g = loadGoal();
   const sig = sigOf(g);
   if (plan && rec?.sig === sig) return;
   plan = prepare(g.targets, g.need, g.metric);

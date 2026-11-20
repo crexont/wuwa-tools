@@ -2,13 +2,10 @@
 // 에코를 실제 확률대로 한 칸씩 열어 보고, 강화 전략(strategy.js)의 최적 순서로 "계속 / 버림"을 알려준다.
 // 칸 뽑기: 13종 중 아직 안 뜬 옵션에서 균등하게, 수치 단계는 data.js 확률표대로 (에코파고 · 강화 전략과 같은 모델).
 import { STAT_DATABASE } from './data.js';
-import { ECHO_COST } from './math.js';
-import { makeModel, optimalPolicy, evaluate } from './strategy.js';
+import { makeModel, optimalPolicy, evaluate, METRICS } from './strategy.js';
 
 export const SLOTS = 5;
 const KEYS = Object.keys(STAT_DATABASE);
-const EXP_CUM = [0];
-for (const e of ECHO_COST.expPerSlot) EXP_CUM.push(EXP_CUM[EXP_CUM.length - 1] + e);
 
 /** 다음 칸 하나 뽑기. opened = [{ key, step }] (step은 1부터), rng = () => [0, 1) */
 export function rollSlot(opened, rng = Math.random) {
@@ -63,10 +60,8 @@ export function verdict(plan, opened) {
 
 /** 칸을 k개 연 에코의 비용. kept = 완성해서 가지는지(환급 없음), 아니면 재료로 써서 환급 */
 export function echoCost(k, kept) {
-  const tuner = k * ECHO_COST.tunerPerSlot, exp = EXP_CUM[k];
-  return kept
-    ? { tuner, exp }
-    : { tuner: tuner * (1 - ECHO_COST.tunerRefund), exp: exp * (1 - ECHO_COST.expRefund) };
+  const cost = (M) => M.spent(k) * (kept ? 1 : 1 - M.refund);
+  return { tuner: cost(METRICS.tuner), exp: cost(METRICS.exp) };
 }
 
 /** 평균(추천 순서대로 했을 때) 완성 1개당 비용 */

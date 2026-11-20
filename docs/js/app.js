@@ -2,7 +2,7 @@
 // (한 줄 읽기는 ocr.js, 어느 줄을 언제 읽을지는 scan.js, 확률 계산은 math.js)
 import {
   STAT_DATABASE, DEFAULT_TARGETS, GOAL_PRESETS, CUT_SCORE,
-  evaluateStepTier, tierPassProb, nearestStep, makeSlot,
+  evaluateStepTier, tierPassProb, nearestStep, makeSlot, statIcon,
 } from './data.js';
 import { goalSuccessProb, isGoalSatisfied, breakEvenTuners, continueValue, discardLoss } from './math.js';
 import { SLOT_COUNT, SPLIT_X, clamp } from './config.js';
@@ -73,9 +73,7 @@ const cropCtx = cropCanvas.getContext('2d', { willReadFrequently: true });
 const ocrSnap = document.createElement('canvas');
 const ocrSnapCtx = ocrSnap.getContext('2d', { willReadFrequently: true });
 
-// 스탯 아이콘: PNG 모양만 따서(mask) 글자색으로 칠한다 → 유효옵은 청록, 나머지는 회색
 const iconUrl = (key) => `./icons/${STAT_DATABASE[key].icon}.png`;
-const statIcon = (key) => `<i class="stat-icon" style="--icon:url('./icons/${STAT_DATABASE[key].icon}.png')" aria-hidden="true"></i>`;
 
 // ───────── 설정 저장/복원 ─────────
 function loadSettings() {

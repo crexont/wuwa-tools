@@ -28,6 +28,9 @@ export const STAT_DATABASE = {
   "깡방":  { name: "방어력 (고정)",   icon: "def", label: "방어력", isPercent: false, matchRegex: /방어|방력/,                 notRegex: null,                        values: [40, 50, 60, 70],                                 probs: norm(DEF_FLAT_PROBS) },
 };
 
+// 옵션 아이콘: PNG 모양만 따서(mask) 글자색으로 칠한다
+export const statIcon = (key) => `<i class="stat-icon" style="--icon:url('./icons/${STAT_DATABASE[key].icon}.png')" aria-hidden="true"></i>`;
+
 export const DEFAULT_TARGETS = ["크확", "크피", "공%", "공효"];
 
 export const GOAL_PRESETS = [

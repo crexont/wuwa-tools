@@ -1,48 +1,21 @@
 // strategy-ui.js — 명조 툴즈 v6.0: 강화 전략 탭 화면 (유효옵 · 고정 옵션 · N개 이상 → 확률 · 가장 싼 강화 순서 · 그래프)
-import { STAT_DATABASE, evaluateStepTier } from './data.js';
-import { analyze, passProb, METRICS } from './strategy.js';
+import { STAT_DATABASE, evaluateStepTier, statIcon } from './data.js';
+import { analyze, passProb, METRICS, GOAL_KEY, loadGoal, clampNeed } from './strategy.js';
 
 const $ = (id) => document.getElementById(id);
-const KEY = 'echopago.strategy.v1';
 const SLOTS = 5;
 const KEYS = Object.keys(STAT_DATABASE);
-// 처음 열었을 때 기본 목표: 크크 고정 + 공효 · 공% 중 1
-const DEFAULT_GOAL = { keys: ['크확', '크피', '공효', '공%'], req: ['크확', '크피'], need: 3 };
 const METRIC_HINT = {
   tuner: '튜너가 가장 적게 드는 순서. 에코파고의 "튜너 아끼기"와 같은 기준이에요.',
   exp: '경험치(에코 재료)가 가장 적게 드는 순서예요.',
   echo: '에코를 가장 적게 버리는 순서예요. 성공할 수 있는 동안은 끝까지 열어요.',
 };
-const statIcon = (key) => `<i class="stat-icon" style="--icon:url('./icons/${STAT_DATABASE[key].icon}.png')" aria-hidden="true"></i>`;
 const valText = (key, v) => `+${v}${STAT_DATABASE[key].isPercent ? '%' : ''}`;
 const nameOf = (t) => STAT_DATABASE[t.key].name + (t.minStep > 1 ? ` ${valText(t.key, STAT_DATABASE[t.key].values[t.minStep - 1])}↑` : '');
 
 // ───────── 저장 ─────────
-function load() {
-  let s = null;
-  try { s = JSON.parse(localStorage.getItem(KEY)); } catch { /* 무시 */ }
-  const oldFormat = s && !('need' in s);                     // 예전 저장(전부 고정)은 그대로 살린다
-  const targets = (Array.isArray(s?.targets) ? s.targets : [])
-    .filter((t) => STAT_DATABASE[t?.key])
-    .map((t) => ({ key: t.key, minStep: Math.min(Math.max(1, t.minStep | 0), STAT_DATABASE[t.key].values.length), req: oldFormat ? true : !!t.req }))
-    .filter((t, i, a) => a.findIndex((x) => x.key === t.key) === i);
-  const st = s ? { targets, need: oldFormat ? targets.length : s.need | 0 } : { ...presetState(DEFAULT_GOAL) };
-  st.metric = METRICS[s?.metric] ? s.metric : 'tuner';
-  clampNeed(st);
-  return st;
-}
-function presetState(p) {
-  return { targets: p.keys.map((key) => ({ key, minStep: 1, req: p.req.includes(key) })), need: p.need };
-}
-// 고정 옵션은 5개까지, 몇 개 이상은 [고정 개수(최소 1) ~ min(5, 유효 개수)]
-function clampNeed(st) {
-  let req = st.targets.filter((t) => t.req);
-  while (req.length > SLOTS) { req.at(-1).req = false; req = st.targets.filter((t) => t.req); }
-  const lo = Math.max(1, req.length), hi = Math.min(SLOTS, st.targets.length);
-  st.need = Math.min(Math.max(st.need || hi, lo), Math.max(lo, hi));
-}
-const state = load();
-const save = () => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch { /* 무시 */ } };
+const state = loadGoal();
+const save = () => { try { localStorage.setItem(GOAL_KEY, JSON.stringify(state)); } catch { /* 무시 */ } };
 
 // ───────── 숫자 표기 ─────────
 const fmtInt = (n) => Math.round(n).toLocaleString('ko-KR');
