@@ -3,7 +3,7 @@
 // 에코파고 화면(app.js · roles.js)과는 따로 돈다. 공명자 목록 · 얼굴 · 속성 색은 roles.js, 무기 목록은 weapons.js.
 // 카드는 canvas 하나로 그려서, 화면에 보이는 그대로 저장된다. 색은 지금 테마(CSS 변수)를 따른다.
 import { ROLES, ELEMENTS, faceUrl } from './roles.js';
-import { WEAPONS, ROLE_WEAPON } from './weapons.js';
+import { WEAPONS, ROLE_WEAPON, WEAPON_ID_ALIAS } from './weapons.js';
 
 const KEY = 'echopago.party.v1';
 const PARTY_SIZE = 3;
@@ -40,7 +40,8 @@ function load() {
     const b = s?.build?.[id];
     const seq = Number.isInteger(b?.s) && b.s >= 0 && b.s <= 6 ? b.s : 0;
     const ref = Number.isInteger(b?.r) && b.r >= 1 && b.r <= 5 ? b.r : 1;
-    const w = findWeapon(b?.w)?.type === ROLE_WEAPON[id] ? b.w : null;
+    const wid = WEAPON_ID_ALIAS[b?.w] ?? b?.w;
+    const w = findWeapon(wid)?.type === ROLE_WEAPON[id] ? wid : null;
     if (seq || ref > 1 || w) build[id] = { s: seq, r: ref, w };
   }
   return { owned, uses, build, parties: parties.length ? parties : [emptyParty(1)] };
