@@ -1,52 +1,38 @@
 // practice-ui.js — 명조 툴즈 v6.0: 튜닝 연습장 탭 화면
 // 재화는 무제한. [강화]를 누르면 다음 칸이 실제 확률대로 열리고, 추천(강화 전략 최적 순서)을 옆에 보여준다.
 // 목표는 강화 전략 탭 저장값(echopago.strategy.v1)을 그대로 쓴다 → 공명자를 고르거나 강화 전략 탭에서 고치면 같이 바뀜.
-import { STAT_DATABASE, evaluateStepTier, statIcon } from './data.js';
-import { METRICS, loadGoal } from './strategy.js';
-import { prepare, rollSlot, verdict, echoCost, expectedPerSuccess, SLOTS } from './practice.js';
+import { STAT_DATABASE, evaluateStepTier, statIcon, valText } from './data.js';
+import { METRICS, loadGoal, makePlan, goalText } from './strategy.js';
+import { rollSlot, verdict, echoCost, expectedPerSuccess } from './practice.js';
+import { SLOT_COUNT as SLOTS } from './config.js';
+import { store, fmtInt, fmtExp } from './util.js';
 
 const $ = (id) => document.getElementById(id);
 const page = $('practicePage');
 const KEY = 'echopago.practice.v1';
 const KEPT_MAX = 12;
 
-const store = {
-  get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } },
-  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* 무시 */ } },
-};
-const valText = (key, step) => `+${STAT_DATABASE[key].values[step - 1]}${STAT_DATABASE[key].isPercent ? '%' : ''}`;
-const fmtInt = (n) => Math.round(n).toLocaleString('ko-KR');
-const fmtExp = (n) => (n >= 10000 ? `${(n / 10000).toFixed(n >= 1e6 ? 0 : 1)}만` : fmtInt(n));
 
-let plan = null;      // practice.js prepare 결과
+let plan = null;      // strategy.js makePlan 결과
 let rec = null;       // 기록 { sig, done, echoes, tuner, exp, follow, decisions, kept: [[{key,step}]], cur: [{key,step}], hint }
 let lastNew = -1;     // 방금 열린 칸 (깜빡임용)
 
 // ───────── 목표 ─────────
 const sigOf = (g) => JSON.stringify([g.targets.map((t) => [t.key, t.minStep, t.req ? 1 : 0]), g.need, g.metric]);
-const nameOf = (t) => STAT_DATABASE[t.key].name + (t.minStep > 1 ? ` ${valText(t.key, t.minStep)}↑` : '');
-function goalText(g) {
-  const req = g.targets.filter((t) => t.req), rest = g.targets.filter((t) => !t.req);
-  const more = g.need - req.length;
-  const parts = [];
-  if (req.length) parts.push(`<b>${req.map(nameOf).join(' · ')}</b> 고정`);
-  if (more > 0) parts.push(`${req.length ? '나머지 ' : ''}${rest.map(nameOf).join(' · ')} 중 <b>${more}개</b>${more === rest.length ? '' : ' 이상'}`);
-  return parts.join(' + ');
-}
 
 function newRecord(sig) {
   return { sig, done: 0, echoes: 0, tuner: 0, exp: 0, follow: 0, decisions: 0, kept: [], cur: [], hint: rec?.hint ?? true };
 }
-const save = () => store.set(KEY, rec);
+const save = () => store.setJSON(KEY, rec);
 
 // 목표가 바뀌면(공명자 선택 · 강화 전략 탭 수정) 기록을 새로 시작한다
 function syncGoal() {
   const g = loadGoal();
   const sig = sigOf(g);
   if (plan && rec?.sig === sig) return;
-  plan = prepare(g.targets, g.need, g.metric);
+  plan = makePlan(g.targets, g.need, g.metric);
   $('prGoal').innerHTML = plan
-    ? `목표 ${goalText(g)} <span class="pr-goal-src">· <a href="#strategy">강화 전략</a>에서 바꿀 수 있어요</span>`
+    ? `목표 ${goalText(g, (t) => `<b>${t}</b>`)} <span class="pr-goal-src">· <a href="#strategy">강화 전략</a>에서 바꿀 수 있어요</span>`
     : `이 목표는 완성할 수 없어요. <a href="#strategy">강화 전략</a>에서 목표를 바꿔 주세요.`;
   if (!rec || rec.sig !== sig) {
     const changed = !!rec;
@@ -202,7 +188,7 @@ function renderRecord() {
 
 // ───────── 시작 ─────────
 function init() {
-  rec = store.get(KEY);
+  rec = store.getJSON(KEY);
   if (rec && !Array.isArray(rec.cur)) rec = null;
   syncGoal();
 
@@ -217,9 +203,7 @@ function init() {
   });
   // 공명자를 고르면 강화 전략 탭이 목표를 먼저 바꾸고 저장하니까, 그 다음에 다시 읽는다
   window.addEventListener('roleselect', () => setTimeout(syncGoal, 0));
-  window.addEventListener('hashchange', () => { if (location.hash === '#practice') syncGoal(); });
-  window.addEventListener('popstate', () => { if (location.hash === '#practice') syncGoal(); });
-  $('appTabs').addEventListener('click', () => setTimeout(() => { if (document.body.dataset.tab === 'practice') syncGoal(); }, 0));
+  window.addEventListener('tabchange', (e) => { if (e.detail === 'practice') syncGoal(); });   // party.js showTab이 보낸다
 
   // 단축키: Space · Enter = 강화, X = 버리기 (연습장 탭에서만)
   document.addEventListener('keydown', (e) => {

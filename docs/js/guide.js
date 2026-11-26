@@ -2,7 +2,8 @@
 // 공명자별 에코 세트 · 메인 에코 · 주옵 · 유효옵 (데이터는 guide-data.js, 아카라이브 "공명자별 에코 정리글"을 옮긴 것).
 // 공명자 선택은 사이트 전체에서 하나: 위 얼굴 줄(roles.js renderStrip)이나 아래 목록에서 고르면 roles.js selectRole이
 // 테마 · 에코파고 유효옵 · 강화 전략 목표를 같이 바꾸고, 여기서는 "roleselect" 이벤트를 받아 큰 카드를 다시 그린다.
-import { ROLES, ELEMENTS, faceUrl, selectRole } from './roles.js';
+import { faceUrl, selectRole, findRole, elementOf } from './roles.js';
+import { store, esc } from './util.js';
 import { GUIDE } from './guide-data.js';
 
 const ROLE_KEY = 'echopago.role.v1';
@@ -17,28 +18,21 @@ const list = $('gdList');
 const tabs = $('gdTabs');
 
 
-const roleOf = (id) => ROLES.find((r) => r.id === id) || null;
-const elementOf = (id) => ELEMENTS.find((e) => e.id === id);
-const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 const elIcon = (el) => `<i class="el-icon" style="--el:${elementOf(el)?.color};--icon:url('./icons/elements/${elementOf(el)?.icon}.png')" aria-hidden="true"></i>`;
 
 // 글 순서(guide-data.js 키 순서)대로, 속성별로 묶는다
 const groups = ORDER.map((el) => ({
   el,
-  ids: Object.keys(GUIDE).filter((id) => roleOf(id)?.elements[0] === el),
+  ids: Object.keys(GUIDE).filter((id) => findRole(id)?.elements[0] === el),
 }));
 
 let currentId = null;
 let filter = '';
 
-const store = {
-  get(k) { try { return localStorage.getItem(k); } catch { return null; } },
-  set(k, v) { try { localStorage.setItem(k, v); } catch { /* 무시 */ } },
-};
 
 // 카드 한 장: 머리(얼굴 · 이름 · 코스트) → 역할/조건별 세트 + 메인 에코 → 주옵 / 유효옵
 function cardHtml(id, big) {
-  const role = roleOf(id);
+  const role = findRole(id);
   const g = GUIDE[id];
   const el = role.elements[0];
   const head = `
@@ -71,7 +65,7 @@ function cardHtml(id, big) {
 }
 
 function renderFeatured() {
-  const role = roleOf(currentId);
+  const role = findRole(currentId);
   if (!role) {
     featured.innerHTML = `<p class="gd-pick">위에서 공명자를 고르거나 아래 목록에서 눌러 보세요.</p>`;
     featured.style.removeProperty('--el');
@@ -104,7 +98,7 @@ function renderList() {
       <div class="gd-cards">
         ${g.ids.map((id) => `
           <article class="gd-card${id === currentId ? ' is-on' : ''}" data-id="${id}">
-            <button type="button" class="gd-card-pick" data-pick="${id}" aria-label="${esc(roleOf(id).name)} 고르기"></button>
+            <button type="button" class="gd-card-pick" data-pick="${id}" aria-label="${esc(findRole(id).name)} 고르기"></button>
             ${cardHtml(id, false)}
           </article>`).join('')}
       </div>
@@ -112,7 +106,7 @@ function renderList() {
 }
 
 function setCurrent(id) {
-  currentId = roleOf(id) ? id : null;
+  currentId = findRole(id) ? id : null;
   renderFeatured();
   for (const c of list.querySelectorAll('.gd-card')) c.classList.toggle('is-on', c.dataset.id === currentId);
 }
@@ -120,7 +114,7 @@ function setCurrent(id) {
 function init() {
   const saved = store.get(FILTER_KEY);
   filter = ORDER.includes(saved) ? saved : '';
-  currentId = roleOf(store.get(ROLE_KEY))?.id ?? null;
+  currentId = findRole(store.get(ROLE_KEY))?.id ?? null;
   renderTabs();
   renderList();
   renderFeatured();

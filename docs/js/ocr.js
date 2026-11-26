@@ -5,6 +5,7 @@ import { STAT_DATABASE, matchStat, isLockedRow, nameSimilarity } from './data.js
 
 const TARGET_SLOT_PX = 90;     // 전처리 후 슬롯 높이 목표(px)
 let nameWorker = null, valueWorker = null;
+let ocrReady = null;           // 로딩 중인 약속을 같이 써서, 로딩 중에 공유를 껐다 켜도 워커를 또 만들지 않는다
 
 // ───────── OCR 전처리 (Otsu 적응형 이진화) ─────────
 function otsuThreshold(hist, total) {
@@ -71,19 +72,22 @@ const preLeft = createPreprocessor();
 const preRight = createPreprocessor();
 
 // ───────── OCR 엔진 (옵션명용 / 수치용 워커 분리) ─────────
-export async function initOcr() {
-  if (nameWorker && valueWorker) return;
-  [nameWorker, valueWorker] = await Promise.all([
-    Tesseract.createWorker('kor+eng'),
-    Tesseract.createWorker('eng'),
-  ]);
-  await Promise.all([
-    nameWorker.setParameters({ tessedit_pageseg_mode: Tesseract.PSM.SINGLE_LINE }),
-    valueWorker.setParameters({
-      tessedit_pageseg_mode: Tesseract.PSM.SINGLE_LINE,
-      tessedit_char_whitelist: '0123456789.,%',
-    }),
-  ]);
+export function initOcr() {
+  ocrReady ??= (async () => {
+    const [name, value] = await Promise.all([
+      Tesseract.createWorker('kor+eng'),
+      Tesseract.createWorker('eng'),
+    ]);
+    await Promise.all([
+      name.setParameters({ tessedit_pageseg_mode: Tesseract.PSM.SINGLE_LINE }),
+      value.setParameters({
+        tessedit_pageseg_mode: Tesseract.PSM.SINGLE_LINE,
+        tessedit_char_whitelist: '0123456789.,%',
+      }),
+    ]);
+    [nameWorker, valueWorker] = [name, value];   // 설정까지 끝난 뒤에만 쓰게 한다
+  })().catch((err) => { ocrReady = null; throw err; });   // 실패하면 다음에 다시 시도
+  return ocrReady;
 }
 
 function parseSlot(nameText, valText, slotNo) {
@@ -213,13 +217,12 @@ function fpDiff(a, b) {
 function createShapeMemory({ match, margin, confirm = 2, max = 60 }) {
   let items = [];                                  // { ...지문, meaning, votes }
   const sameMeaning = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+  // 가장 닮은 기억 + 모든 기억과의 차이 (lookup이 비교를 다시 하지 않도록 같이 돌려준다)
   function find(fp) {
     let best = null, bestD = Infinity;
-    for (const e of items) {
-      const d = fpDiff(fp, e);
-      if (d < bestD) { bestD = d; best = e; }
-    }
-    return best && bestD <= match ? { entry: best, d: bestD } : null;
+    const ds = items.map((e) => fpDiff(fp, e));
+    ds.forEach((d, i) => { if (d < bestD) { bestD = d; best = items[i]; } });
+    return best && bestD <= match ? { entry: best, d: bestD, ds } : null;
   }
   return {
     // OCR을 생략해도 될 만큼 확실한 기억만 돌려준다 (비슷한 모양의 다른 뜻이 있으면 null)
@@ -227,7 +230,7 @@ function createShapeMemory({ match, margin, confirm = 2, max = 60 }) {
       if (!fp) return null;
       const hit = find(fp);
       if (!hit || hit.entry.votes < confirm) return null;
-      const rival = items.some((e) => e !== hit.entry && !sameMeaning(e.meaning, hit.entry.meaning) && fpDiff(fp, e) < hit.d + margin);
+      const rival = items.some((e, i) => e !== hit.entry && !sameMeaning(e.meaning, hit.entry.meaning) && hit.ds[i] < hit.d + margin);
       return rival ? null : hit.entry.meaning;
     },
     // OCR 결과를 기억. clean(깔끔하게 읽음)이면 바로 확정, 아니면 같은 결과가 한 번 더 나와야 확정

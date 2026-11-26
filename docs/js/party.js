@@ -2,19 +2,13 @@
 // 가진 캐릭터를 체크하고, 그 안에서 파티(3명)를 직접 짜고, 한 장짜리 카드로 캡처(PNG 저장 · 이미지 복사)한다.
 // 에코파고 화면(app.js · roles.js)과는 따로 돈다. 공명자 목록 · 얼굴 · 속성 색은 roles.js, 무기 목록은 weapons.js.
 // 카드는 canvas 하나로 그려서, 화면에 보이는 그대로 저장된다. 색은 지금 테마(CSS 변수)를 따른다.
-import { ROLES, ELEMENTS, faceUrl } from './roles.js';
-import { WEAPONS, ROLE_WEAPON, WEAPON_ID_ALIAS } from './weapons.js';
-
-const KEY = 'echopago.party.v1';
-const PARTY_SIZE = 3;
-const PARTY_MAX = 20;   // 역경의 탑 · 홀로그램 등 한 번에 10파티 넘게 짜는 경우도 있어서 넉넉히
-const NAME_MAX = 20;
+import { ROLES, ELEMENTS, faceUrl, findRole, elementOf } from './roles.js';
+import { WEAPONS, ROLE_WEAPON } from './weapons.js';
+import { PARTY_KEY, PARTY_SIZE, PARTY_MAX, NAME_MAX, findWeapon, emptyParty, parseParty } from './party-data.js';
+import { store } from './util.js';
 
 const $ = (id) => document.getElementById(id);
-const elementOf = (id) => ELEMENTS.find((e) => e.id === id);
 const colorOf = (role) => elementOf(role.elements[0])?.color ?? '#74767e';
-const findRole = (id) => ROLES.find((r) => r.id === id) || null;
-const findWeapon = (id) => WEAPONS.find((w) => w.id === id) || null;
 const weaponIcon = (w) => `./img/weapons/${w.id}.webp`;
 // 그 공명자가 들 수 있는 무기 (같은 종류)
 const weaponsFor = (roleId) => WEAPONS.filter((w) => w.type === ROLE_WEAPON[roleId]);
@@ -22,32 +16,8 @@ const weaponsFor = (roleId) => WEAPONS.filter((w) => w.type === ROLE_WEAPON[role
 const ORDERED = ELEMENTS.flatMap((e) => ROLES.filter((r) => r.elements[0] === e.id));
 
 // ───────── 저장 ─────────
-const emptyParty = (n) => ({ name: `파티 ${n}`, ids: Array(PARTY_SIZE).fill(null) });
-function load() {
-  let s = null;
-  try { s = JSON.parse(localStorage.getItem(KEY)); } catch { /* 무시 */ }
-  const owned = Array.isArray(s?.owned) ? s.owned.filter(findRole) : [];
-  const parties = (Array.isArray(s?.parties) ? s.parties : []).slice(0, PARTY_MAX).map((p, i) => ({
-    name: typeof p?.name === 'string' ? p.name.slice(0, NAME_MAX) : `파티 ${i + 1}`,
-    ids: Array.from({ length: PARTY_SIZE }, (_, k) => (owned.includes(p?.ids?.[k]) ? p.ids[k] : null)),
-  }));
-  // 사용 횟수: 서포터 등 두 파티에 넣을 수 있는 캐릭터만 2를 적어 둔다 (없으면 1회)
-  const uses = {};
-  for (const id of owned) if (s?.uses?.[id] === 2) uses[id] = 2;
-  // 돌파(0~6) · 무기 재련(1~5) · 무기(id). 기본값(0돌 · R1 · 무기 안 정함)이면 적지 않는다
-  const build = {};
-  for (const id of owned) {
-    const b = s?.build?.[id];
-    const seq = Number.isInteger(b?.s) && b.s >= 0 && b.s <= 6 ? b.s : 0;
-    const ref = Number.isInteger(b?.r) && b.r >= 1 && b.r <= 5 ? b.r : 1;
-    const wid = WEAPON_ID_ALIAS[b?.w] ?? b?.w;
-    const w = findWeapon(wid)?.type === ROLE_WEAPON[id] ? wid : null;
-    if (seq || ref > 1 || w) build[id] = { s: seq, r: ref, w };
-  }
-  return { owned, uses, build, parties: parties.length ? parties : [emptyParty(1)] };
-}
-const state = load();
-function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch { /* 무시 */ } }
+const state = parseParty(store.getJSON(PARTY_KEY));
+const save = () => store.setJSON(PARTY_KEY, state);
 
 const maxUses = (id) => (state.uses[id] === 2 ? 2 : 1);
 const usedCount = (id) => state.parties.reduce((n, p) => n + p.ids.filter((x) => x === id).length, 0);
@@ -83,6 +53,7 @@ function showTab() {
   document.title = `${TAB_TITLE[tab]} — 명조 툴즈`;
   for (const a of tabs.querySelectorAll('[data-tab]')) a.setAttribute('aria-current', a.dataset.tab === tab ? 'page' : 'false');
   if (tab === 'party') renderCard();   // 에코파고에서 공명자(테마)를 바꿨을 수 있으니 카드 색을 다시 맞춘다
+  window.dispatchEvent(new CustomEvent('tabchange', { detail: tab }));   // 강화 전략 그래프 · 연습장 목표가 이걸 듣는다
 }
 tabs.addEventListener('click', (e) => {
   const a = e.target.closest('[data-tab]');

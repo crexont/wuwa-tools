@@ -1,42 +1,30 @@
 // strategy-ui.js — 명조 툴즈 v6.0: 강화 전략 탭 화면 (유효옵 · 고정 옵션 · N개 이상 → 확률 · 가장 싼 강화 순서 · 그래프)
-import { STAT_DATABASE, evaluateStepTier, statIcon } from './data.js';
-import { analyze, passProb, METRICS, GOAL_KEY, loadGoal, clampNeed } from './strategy.js';
+import { STAT_DATABASE, evaluateStepTier, statIcon, valText } from './data.js';
+import { analyze, passProb, METRICS, GOAL_KEY, loadGoal, clampNeed, goalText } from './strategy.js';
+import { SLOT_COUNT as SLOTS } from './config.js';
+import { store, fmtInt, fmtExp } from './util.js';
 
 const $ = (id) => document.getElementById(id);
-const SLOTS = 5;
 const KEYS = Object.keys(STAT_DATABASE);
 const METRIC_HINT = {
   tuner: '튜너가 가장 적게 드는 순서. 에코파고의 "튜너 아끼기"와 같은 기준이에요.',
   exp: '경험치(에코 재료)가 가장 적게 드는 순서예요.',
   echo: '에코를 가장 적게 버리는 순서예요. 성공할 수 있는 동안은 끝까지 열어요.',
 };
-const valText = (key, v) => `+${v}${STAT_DATABASE[key].isPercent ? '%' : ''}`;
-const nameOf = (t) => STAT_DATABASE[t.key].name + (t.minStep > 1 ? ` ${valText(t.key, STAT_DATABASE[t.key].values[t.minStep - 1])}↑` : '');
 
 // ───────── 저장 ─────────
 const state = loadGoal();
-const save = () => { try { localStorage.setItem(GOAL_KEY, JSON.stringify(state)); } catch { /* 무시 */ } };
+const save = () => store.setJSON(GOAL_KEY, state);
 
 // ───────── 숫자 표기 ─────────
-const fmtInt = (n) => Math.round(n).toLocaleString('ko-KR');
 function fmtCost(metric, n) {
   if (!Number.isFinite(n)) return '-';
-  if (metric === 'exp') return n >= 10000 ? `${(n / 10000).toFixed(n >= 1e6 ? 0 : 1)}만` : fmtInt(n);
+  if (metric === 'exp') return fmtExp(n);
   if (metric === 'echo') return n < 100 ? n.toFixed(1) : fmtInt(n);
   return fmtInt(n);
 }
 const fmtPct = (p) => { const v = p * 100; return v >= 10 ? v.toFixed(1) : v >= 1 ? v.toFixed(2) : v.toFixed(3); };
 const perSuccess = (r, m) => r[m].net / r.p;
-
-// 목표를 한 줄 문장으로: "크리티컬 확률 · 크리티컬 피해 고정 + 나머지 2개(공명 효율 · 공격력%) 중 1개"
-function goalText() {
-  const req = state.targets.filter((t) => t.req), rest = state.targets.filter((t) => !t.req);
-  const more = state.need - req.length;
-  const reqPart = req.length ? `${req.map(nameOf).join(' · ')} 고정` : '';
-  if (more <= 0) return req.length === state.targets.length ? `${reqPart} (전부)` : reqPart;
-  const restPart = `${req.length ? '나머지 ' : ''}${rest.length}개(${rest.map(nameOf).join(' · ')}) 중 ${more}개${more === rest.length ? ' (전부)' : ' 이상'}`;
-  return req.length ? `${reqPart} + ${restPart}` : restPart;
-}
 
 // ───────── 왼쪽: 목표 고르기 ─────────
 function renderChips() {
@@ -53,7 +41,7 @@ function renderTargets() {
     const d = STAT_DATABASE[t.key];
     const opts = d.values.map((v, s) => {
       const tier = evaluateStepTier(s + 1, d.values.length).label;
-      return `<option value="${s + 1}" ${s + 1 === t.minStep ? 'selected' : ''}>${s === 0 ? '아무 수치' : `${valText(t.key, v)} 이상 · ${tier} · ${fmtPct(passProb(t.key, s + 1))}%`}</option>`;
+      return `<option value="${s + 1}" ${s + 1 === t.minStep ? 'selected' : ''}>${s === 0 ? '아무 수치' : `${valText(t.key, s + 1)} 이상 · ${tier} · ${fmtPct(passProb(t.key, s + 1))}%`}</option>`;
     }).join('');
     return `<div class="sg-target ${t.req ? 'is-req' : ''}">
       <span class="sg-target-name">${statIcon(t.key)}${d.name}</span>
@@ -67,7 +55,7 @@ function renderTargets() {
   $('sgNeedRow').hidden = false;
   $('sgNeed').innerHTML = Array.from({ length: Math.max(0, hi - lo + 1) }, (_, i) => lo + i).map((n) => `<option value="${n}" ${n === state.need ? 'selected' : ''}>${n}개 이상</option>`).join('') || `<option>${lo}개 이상</option>`;
   $('sgNeed').disabled = hi <= lo;
-  $('sgGoalText').textContent = goalText();
+  $('sgGoalText').textContent = goalText(state);
 }
 function renderMetric() {
   for (const b of $('sgMetric').querySelectorAll('[data-metric]')) b.setAttribute('aria-pressed', b.dataset.metric === state.metric);
@@ -86,7 +74,7 @@ function renderResult() {
   }
   const b = res.best;
   out.innerHTML = `
-    <div class="sg-goal">${goalText()}</div>
+    <div class="sg-goal">${goalText(state)}</div>
     <div class="sg-big">
       <div><div class="sg-big-label">에코 1개가 성공할 확률</div><div class="sg-big-num">${fmtPct(b.p)}%</div>
         <div class="sg-sub">아래 순서대로 강화할 때 · 5칸을 다 열면 ${fmtPct(res.untilDead.p)}%</div></div>
@@ -250,9 +238,7 @@ $('sgMetric').addEventListener('click', (e) => {
 });
 // 탭을 열 때(공명자 테마 색이 바뀌었을 수 있음) · 창 크기가 바뀔 때 그래프를 다시 그린다
 const redrawIfShown = () => { if (document.body.dataset.tab === 'strategy') drawChart(); };
-window.addEventListener('hashchange', () => setTimeout(redrawIfShown));
-window.addEventListener('popstate', () => setTimeout(redrawIfShown));
-$('appTabs').addEventListener('click', () => setTimeout(redrawIfShown));
+window.addEventListener('tabchange', redrawIfShown);   // party.js showTab이 보낸다
 new ResizeObserver(redrawIfShown).observe($('sgChartWrap'));
 
 update();

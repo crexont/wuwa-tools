@@ -1,10 +1,12 @@
 // app.js — 명조 툴즈 v6.0: 화면 공유, 인식 영역 조정, 결과 표시, 수동 수정
-// (한 줄 읽기는 ocr.js, 어느 줄을 언제 읽을지는 scan.js, 확률 계산은 math.js)
+// (한 줄 읽기는 ocr.js, 어느 줄을 언제 읽을지는 scan.js, 확률 · 강화 순서 계산은 strategy.js)
 import {
   STAT_DATABASE, DEFAULT_TARGETS, GOAL_PRESETS, CUT_SCORE,
-  evaluateStepTier, tierPassProb, nearestStep, makeSlot, statIcon,
+  evaluateStepTier, nearestStep, makeSlot, statIcon,
 } from './data.js';
-import { goalSuccessProb, isGoalSatisfied, breakEvenTuners, continueValue, discardLoss } from './math.js';
+import { discardLoss } from './math.js';
+import { makePlan, echoGoal, stateOf, evaluate as evaluatePolicy } from './strategy.js';
+import { store } from './util.js';
 import { SLOT_COUNT, SPLIT_X, clamp } from './config.js';
 import { initOcr, clearNameCache } from './ocr.js';
 import { initScanner, scanOnce, invalidateScan, forgetRow } from './scan.js';
@@ -77,19 +79,17 @@ const iconUrl = (key) => `./icons/${STAT_DATABASE[key].icon}.png`;
 
 // ───────── 설정 저장/복원 ─────────
 function loadSettings() {
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; } catch { return {}; }
+  return store.getJSON(STORAGE_KEY) || {};
 }
 function saveSettings() {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({
-      v: 3,
-      targets: getSelectedTargets(),
-      cut: minTierCutSelect.value,
-      mode: getGoMode(),
-      box,
-      viewMode,
-    }));
-  } catch { /* 저장 실패는 무시 */ }
+  store.setJSON(STORAGE_KEY, {
+    v: 3,
+    targets: getSelectedTargets(),
+    cut: minTierCutSelect.value,
+    mode: getGoMode(),
+    box,
+    viewMode,
+  });
 }
 function sanitizeBox(b) {
   const w = clamp(b.w, MIN_BOX, 1), h = clamp(b.h, MIN_BOX, 1);
@@ -165,15 +165,6 @@ function initUI() {
 // ───────── 확률 평가 / 렌더 ─────────
 function slotsSignature() {
   return lockedSlots.map((s, i) => (s ? `${s.key}|${s.val}${pinned[i] ? '*' : ''}` : '-')).join(',');
-}
-
-function buildBase(goal, validKeys) {
-  const cap = goal.req;
-  if (goal.type === 'crit') {
-    const others = validKeys.filter((k) => k !== '크확' && k !== '크피').length;
-    return [validKeys.includes('크확') ? 1 : 0, validKeys.includes('크피') ? 1 : 0, Math.min(others, cap)];
-  }
-  return [0, 0, Math.min(validKeys.length, cap)];
 }
 
 // prob: 0~1 (막대 길이). 숫자가 없는 상태(대기/달성)는 null
@@ -260,23 +251,15 @@ function syncOverlay({ openedCount, isValid }) {
   });
 }
 
-// 열린 옵션은 유효 여부와 상관없이 풀에서 빠진다. p = 뽑혔을 때 유효일 확률 (스탯별 실제 확률표 기반)
-function buildPool(opened, selectedTargets, cutScore) {
-  return Object.keys(STAT_DATABASE)
-    .filter((k) => !opened.has(k))
-    .map((k) => ({
-      key: k,
-      kind: k === '크확' ? 'critRate' : k === '크피' ? 'critDmg' : 'other',
-      p: selectedTargets.includes(k) ? tierPassProb(k, cutScore) : 0,
-    }));
-}
-
-// 완성 1개당 기대 튜너는 유효옵·수치 컷·목표에만 달려 있어서 설정이 바뀔 때만 다시 계산한다
-const breakEvenCache = new Map();
-function getBreakEven(goal, selectedTargets, cutScore) {
+// 목표별 최적 강화 순서(강화 전략 탭과 같은 계산, 튜너 기준)는 유효옵·수치 컷·목표에만 달려 있어서 설정이 바뀔 때만 다시 계산한다
+const planCache = new Map();
+function getPlan(goal, selectedTargets, cutScore) {
   const key = `${goal.id}|${cutScore}|${[...selectedTargets].sort().join(',')}`;
-  if (!breakEvenCache.has(key)) breakEvenCache.set(key, breakEvenTuners(goal, buildPool(new Set(), selectedTargets, cutScore)));
-  return breakEvenCache.get(key);
+  if (!planCache.has(key)) {
+    const g = echoGoal(goal, selectedTargets, cutScore);
+    planCache.set(key, makePlan(g.targets, g.need, 'tuner'));
+  }
+  return planCache.get(key);
 }
 
 const fmtGain = (g) => `${g >= 0 ? '+' : ''}${g.toFixed(1)}`;
@@ -323,10 +306,6 @@ function evaluate() {
     return { openedCount, isValid };
   }
 
-  const validKeys = slots.filter(isValid).map((s) => s.key);
-  const opened = new Set(slots.map((s) => s.key));
-  const pool = buildPool(opened, selectedTargets, cutScore);
-  const picks = SLOT_COUNT - openedCount;
   const critSelected = selectedTargets.includes('크확') && selectedTargets.includes('크피');
 
   GOAL_PRESETS.forEach((goal) => {
@@ -334,14 +313,14 @@ function evaluate() {
       setGoalResult(goal.id, '크확·크피를 유효옵으로 선택해야 계산돼요', 'WAIT');
       return;
     }
-    const base = buildBase(goal, validKeys);
-    if (isGoalSatisfied(base, goal)) { setGoalResult(goal.id, '<span class="prob-num">달성</span><span class="prob-label">목표 스펙 완성</span>', 'DONE'); return; }
-    const prob = goalSuccessProb(goal, pool, picks, base);
+    const plan = getPlan(goal, selectedTargets, cutScore);   // null = 이 유효옵으로는 완성 불가능
+    const s = plan && stateOf(plan, slots);                   // null = 고정 옵션(크확·크피)이 컷 미만으로 떠서 실패 확정
+    if (s && plan.model.success(s)) { setGoalResult(goal.id, '<span class="prob-num">달성</span><span class="prob-label">목표 스펙 완성</span>', 'DONE'); return; }
+    const prob = s ? evaluatePolicy(plan.model, () => true, s).p : 0;   // 될 때까지 열 때의 완성 확률
     if (prob === 0) { setGoalResult(goal.id, '<span class="prob-num">0%</span><span class="prob-label">수학적 달성 불가</span>', 'STOP', 0); return; }
     // 두 기준을 다 계산해 두고, 고른 기준으로 카드의 GO/STOP을 정한다
-    const lambda = getBreakEven(goal, selectedTargets, cutScore);
-    const gain = continueValue(goal, pool, picks, base, lambda);
-    const d = { tuner: gain > 0, echo: true, gain, lambda };
+    const st = plan.opt.states.get(plan.model.key(s));
+    const d = { tuner: Boolean(st?.go), echo: true, gain: st ? st.gain : -Infinity, lambda: plan.opt.lambda };
     setGoalResult(goal.id, `<span class="prob-num">${(prob * 100).toFixed(2)}%</span><span class="prob-label">최종 완성 확률</span>${decisionLine(d)}`, d[mode] ? 'GO' : 'STOP', prob, d);
   });
   return { openedCount, isValid };

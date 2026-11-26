@@ -84,14 +84,8 @@ export function evaluateStepTier(step, totalSteps) {
   return { label: '하옵', class: 'tier-low', score: 1 };
 }
 
-// 컷오프(cutScore) 이상 단계가 나올 확률 — 스탯별 실제 확률표 기반
-export function tierPassProb(key, cutScore) {
-  const { values, probs } = STAT_DATABASE[key];
-  return probs.reduce(
-    (sum, p, i) => sum + (evaluateStepTier(i + 1, values.length).score >= cutScore ? p : 0),
-    0
-  );
-}
+// 단계(1부터)의 수치 글자: "+9.9%", "+40"
+export const valText = (key, step) => `+${STAT_DATABASE[key].values[step - 1]}${STAT_DATABASE[key].isPercent ? '%' : ''}`;
 
 export function nearestStep(val, values) {
   let idx = 0, min = Math.abs(val - values[0]);

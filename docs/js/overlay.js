@@ -2,6 +2,8 @@
 // "문서 화면 속 화면(Document Picture-in-Picture)" 기능으로 작은 창을 띄운다.
 // 창 안에서: 화면 공유 시작/중지, 초기화, 부옵션 5칸(직접 추가·수정·삭제), 목표별 확률
 
+import { esc } from './util.js';
+
 let pipWin = null;
 let lastModel = null;
 let onCloseCb = () => {};
@@ -63,7 +65,6 @@ export async function openOverlay({ onClose, actions: acts = {}, statOptions: op
 
 export function closeOverlay() { if (getOverlayWindow()) pipWin.close(); }
 
-const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const $ = (id) => pipWin.document.getElementById(id);
 
 /**

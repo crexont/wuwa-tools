@@ -5,6 +5,7 @@
 import { STAT_DATABASE } from './data.js';
 import { PRESETS } from './presets.js';
 import { THEME_COLORS } from './themes.js';
+import { store } from './util.js';
 
 const ROLE_KEY = 'echopago.role.v1';
 const RECENT_KEY = 'echopago.roleRecent.v1';
@@ -19,7 +20,7 @@ export const ELEMENTS = [
   { id: '회절', color: '#f8e56c', icon: 'spectro' },
   { id: '인멸', color: '#e649a6', icon: 'havoc' },
 ];
-const elementOf = (id) => ELEMENTS.find((e) => e.id === id);
+export const elementOf = (id) => ELEMENTS.find((e) => e.id === id);
 const elementColor = (id) => elementOf(id)?.color ?? '#74767e';
 const elementIcon = (id) => `<i class="el-icon" style="--el:${elementColor(id)};--icon:url('./icons/elements/${elementOf(id)?.icon}.png')" title="${id}" aria-label="${id}"></i>`;
 const elementIcons = (role) => role.elements.map(elementIcon).join('');
@@ -92,7 +93,7 @@ export const ROLES = [
   { id: 'rover-havoc', name: '방랑자 · 인멸', elements: ['인멸'], img: 'rover' },
   { id: 'rover-spectro', name: '방랑자 · 회절', elements: ['회절'], img: 'rover' },
 ];
-const findRole = (id) => ROLES.find((r) => r.id === id) || null;
+export const findRole = (id) => ROLES.find((r) => r.id === id) || null;
 const targetsOf = (role) => PRESETS[role.id] ?? FALLBACK_TARGETS;
 
 export const faceUrl = (role) => `./img/roles/face/${role.img ?? role.id}.jpg`;  // 얼굴 타일용 (게임 얼굴 아이콘)
@@ -113,10 +114,6 @@ let applying = false;   // 우리가 체크박스를 바꾸는 중에는 "직접
 let elementFilter = '';
 
 // ───────── 저장 ─────────
-const store = {
-  get(key) { try { return localStorage.getItem(key); } catch { return null; } },
-  set(key, v) { try { v == null ? localStorage.removeItem(key) : localStorage.setItem(key, v); } catch { /* 무시 */ } },
-};
 function loadRecent() {
   try { const a = JSON.parse(store.get(RECENT_KEY)); return Array.isArray(a) ? a.filter(findRole) : []; } catch { return []; }
 }

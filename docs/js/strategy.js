@@ -4,10 +4,12 @@
 // 목표: "고정" 옵션은 전부 최소 수치 이상으로 떠야 하고, 유효옵(고정 포함)이 최소 수치 이상으로 N개 이상 뜨면 성공.
 //   고정 옵션이 최소 수치 미만으로 뜨면 실패 확정. 고정이 아닌 유효옵이 미만으로 뜨면 그냥 꽝 한 칸.
 // 성공한 에코도 결국 +25까지 다 열어야 쓰니까, 성공 비용은 5칸 전부. 버린 에코는 재료로 써서 환급을 받는다.
-import { STAT_DATABASE } from './data.js';
+import { STAT_DATABASE, evaluateStepTier, valText } from './data.js';
 import { ECHO_COST } from './math.js';
+import { SLOT_COUNT as SLOTS } from './config.js';
+import { store } from './util.js';
 
-const POOL = 13, SLOTS = 5;
+const POOL = Object.keys(STAT_DATABASE).length;
 const EXP_CUM = [0];
 for (const e of ECHO_COST.expPerSlot) EXP_CUM.push(EXP_CUM[EXP_CUM.length - 1] + e);
 
@@ -33,7 +35,7 @@ export function passProb(key, minStep) {
  */
 export function makeModel(targets, need) {
   const map = new Map();
-  const gi = [];                                           // 옵션별 묶음 번호 (테스트용)
+  const gi = [];                                           // 옵션별 묶음 번호 (stateOf에서 씀)
   for (const t of targets) {
     const q = passProb(t.key, t.minStep);
     const id = `${t.req ? 1 : 0}|${q}`;
@@ -71,7 +73,8 @@ export function makeModel(targets, need) {
 }
 
 // 정책(policy(s) = 계속?)을 따라 에코 1개를 강화할 때: 성공 확률, 기준별 기대 비용(환급 전 · 후)
-export function evaluate(model, policy) {
+// start = 이미 몇 칸 연 상태에서 시작할 때 (에코파고). 비용은 처음부터 쓴 양 기준
+export function evaluate(model, policy, start = model.start) {
   const res = { p: 0 };
   for (const m of Object.keys(METRICS)) res[m] = { gross: 0, net: 0 };
   const add = (prob, k, ok) => {
@@ -83,7 +86,7 @@ export function evaluate(model, policy) {
     if (ok) res.p += prob;
   };
   // 같은 상태로 가는 길을 합쳐서 한 번만 펼친다 (칸 수별로 차례대로)
-  let layer = new Map([[model.key(model.start), { s: model.start, prob: 1 }]]);
+  let layer = new Map([[model.key(start), { s: start, prob: 1 }]]);
   while (layer.size) {
     const nextLayer = new Map();
     for (const { s, prob } of layer.values()) {
@@ -100,7 +103,11 @@ export function evaluate(model, policy) {
   return res;
 }
 
-/** 기준(metric)으로 성공 1개당 비용이 가장 적은 정책. 반환 { policy, states: Map(key → { s, go }) } 또는 null(불가능) */
+/**
+ * 기준(metric)으로 성공 1개당 비용이 가장 적은 정책. 불가능하면 null
+ * 반환 { policy, states: Map(key → { s, go, gain }), lambda }
+ *   gain = 다음 칸을 열 때의 기대 손익 (지금 버리는 것 대비, 0보다 크면 계속), lambda = 성공 1개의 값 (= 성공 1개당 평균 비용)
+ */
 export function optimalPolicy(model, metric) {
   const M = METRICS[metric];
   // λ = 성공 1개의 가치. V = 지금 상태의 가치(이미 쓴 비용은 빼고, 버리면 환급만 받음)
@@ -126,7 +133,10 @@ export function optimalPolicy(model, metric) {
   let lo = 0;
   for (let it = 0; it < 80; it++) { const mid = (lo + hi) / 2; if (solve(mid).start > 0) hi = mid; else lo = mid; }
   const states = new Map();
-  for (const [kk, { s, cont }] of solve(hi).memo) states.set(kk, { s, go: cont >= M.refund * M.spent(s.k) - 1e-9 });
+  for (const [kk, { s, cont }] of solve(hi).memo) {
+    const gain = cont - M.refund * M.spent(s.k);
+    states.set(kk, { s, go: gain >= -1e-9, gain });
+  }
   // 에코 기준은 칸을 여는 게 공짜라 "불가능해질 때까지 연다"와 같다
   return { policy: (s) => states.get(model.key(s))?.go ?? true, states, lambda: hi };
 }
@@ -143,19 +153,60 @@ function evaluateOpenAll(model) {
 }
 
 /**
- * 한 번에 계산: 최적 전략 + 비교용 두 전략
- * @param targets [{ key, minStep, req }], need 유효 몇 개 이상
- * @returns null(불가능) 또는 { model, best, untilDead, openAll, rules }
+ * 목표 준비: 모델 + 최적 정책 + 그 정책의 평균값. 불가능한 목표면 null (강화 전략 · 튜닝 연습장 · 에코파고가 같이 쓴다)
+ * @param targets [{ key, minStep, req }], need 유효 몇 개 이상, metric 'tuner' | 'exp' | 'echo'
  */
-export function analyze(targets, need, metric) {
-  if (!targets.length) return null;
+export function makePlan(targets, need, metric = 'tuner') {
+  if (!targets?.length) return null;
   const model = makeModel(targets, need);
   if (model.N > SLOTS || model.N > model.V || model.groups.some((g) => g.req && g.q <= 0)) return null;
   const opt = optimalPolicy(model, metric);
   if (!opt) return null;
   const best = evaluate(model, opt.policy);
   if (!(best.p > 0)) return null;
-  return { model, best, untilDead: evaluate(model, () => true), openAll: evaluateOpenAll(model), rules: rulesOf(model, opt) };
+  return { targets, need, metric, model, opt, policy: opt.policy, best };
+}
+
+/**
+ * 강화 전략 탭: 최적 전략 + 비교용 두 전략
+ * @returns null(불가능) 또는 { model, best, untilDead, openAll, rules }
+ */
+export function analyze(targets, need, metric) {
+  const p = makePlan(targets, need, metric);
+  if (!p) return null;
+  return { model: p.model, best: p.best, untilDead: evaluate(p.model, () => true), openAll: evaluateOpenAll(p.model), rules: rulesOf(p.model, p.opt) };
+}
+
+/** 지금 에코 상태 opened = [{ key, step }] → 모델 상태. 고정 옵션이 기준 미만이면 null(실패 확정) */
+export function stateOf(plan, opened) {
+  const { model, targets } = plan;
+  const u = model.groups.map((g) => g.size);
+  let P = 0;
+  for (const s of opened) {
+    const i = targets.findIndex((t) => t.key === s.key);
+    if (i < 0) continue;
+    u[model.gi[i]]--;
+    if (s.step >= targets[i].minStep) P++;
+    else if (targets[i].req) return null;
+  }
+  return { k: opened.length, u, P };
+}
+
+// ───────── 에코파고 목표 → 이 모델 ─────────
+/** 등급 컷(1 하옵 · 2 중옵 · 3 상옵) 이상이 되는 가장 낮은 단계 */
+export function cutStep(key, cutScore) {
+  const n = STAT_DATABASE[key].values.length;
+  let step = 1;
+  while (step < n && evaluateStepTier(step, n).score < cutScore) step++;
+  return step;
+}
+/** 크크 + N유효 = 크확 · 크피 고정 + 유효 2+N개 이상, 서포터 N유효 = 고정 없이 N개 이상 */
+export function echoGoal(goal, keys, cutScore) {
+  const crit = goal.type === 'crit';
+  return {
+    targets: keys.map((key) => ({ key, minStep: cutStep(key, cutScore), req: crit && (key === '크확' || key === '크피') })),
+    need: crit ? 2 + goal.req : goal.req,
+  };
 }
 
 // 사람이 읽을 전략표: rows[k][P] = null(나올 수 없음) | { kind: 'go' | 'stop' | 'mixed', byReq: Map(고정 뜬 수 → 'go'|'stop'|'mixed') }
@@ -177,6 +228,18 @@ export function rulesOf(model, opt) {
   return rows;
 }
 
+// ───────── 목표 문장 (강화 전략 탭 · 튜닝 연습장) ─────────
+export const nameOf = (t) => STAT_DATABASE[t.key].name + (t.minStep > 1 ? ` ${valText(t.key, t.minStep)}↑` : '');
+/** "크리티컬 확률 · 크리티컬 피해 고정 + 나머지 2개(공명 효율 · 공격력%) 중 1개 이상". em = 강조할 부분을 감쌀 함수 */
+export function goalText({ targets, need }, em = (t) => t) {
+  const req = targets.filter((t) => t.req), rest = targets.filter((t) => !t.req);
+  const more = need - req.length;
+  const reqPart = req.length ? `${em(req.map(nameOf).join(' · '))} 고정` : '';
+  if (more <= 0) return req.length === targets.length ? `${reqPart} (전부)` : reqPart;
+  const restPart = `${req.length ? '나머지 ' : ''}${rest.length}개(${rest.map(nameOf).join(' · ')}) 중 ${em(`${more}개`)}${more === rest.length ? ' (전부)' : ' 이상'}`;
+  return req.length ? `${reqPart} + ${restPart}` : restPart;
+}
+
 // ───────── 목표 저장값 (강화 전략 탭 · 튜닝 연습장이 같이 읽는다) ─────────
 export const GOAL_KEY = 'echopago.strategy.v1';
 // 처음 열었을 때 기본 목표: 크크 고정 + 공효 · 공% 중 1
@@ -184,8 +247,7 @@ const DEFAULT_GOAL = { keys: ['크확', '크피', '공효', '공%'], req: ['크�
 
 /** 저장된 목표 { targets, need, metric } (없거나 깨졌으면 기본 목표) */
 export function loadGoal() {
-  let s = null;
-  try { s = JSON.parse(localStorage.getItem(GOAL_KEY)); } catch { /* 무시 */ }
+  const s = store.getJSON(GOAL_KEY);
   const oldFormat = s && !('need' in s);                     // 예전 저장(전부 고정)은 그대로 살린다
   const targets = (Array.isArray(s?.targets) ? s.targets : [])
     .filter((t) => STAT_DATABASE[t?.key])
